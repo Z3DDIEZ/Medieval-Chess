@@ -17,6 +17,7 @@ public class Game : AggregateRoot<Guid>
         Board = null!; // EF Core binding
     }
 
+    public static Game StartNew()
     {
         return new Game
         {
