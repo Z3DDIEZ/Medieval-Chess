@@ -19,7 +19,7 @@
         *   `Analyze (csharp)`
         *   `Analyze (javascript-typescript)`
 3.  **Do not allow bypassing the above settings**
-    *   [x] Apply to administrators (optional but recommended)
+    *   [ ] Apply to administrators (disabled for flexibility)
 
 ## 2. Merge Strategy
 *   **Squash and Merge**: Recommended to keep the main history clean.
