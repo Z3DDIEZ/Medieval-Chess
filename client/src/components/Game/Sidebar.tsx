@@ -8,13 +8,14 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ viewMode, onToggleView }: SidebarProps) => {
-    const { game, loading, error } = useGameStore();
+    const { game, loading, error, resignGame, offerDraw } = useGameStore();
 
     if (loading) return <div className="game-sidebar">Loading Realm...</div>;
     if (error) return <div className="game-sidebar">Error: {error}</div>;
     if (!game) return <div className="game-sidebar">No active game</div>;
 
     const isWhiteTurn = game.currentTurn === 0;
+
 
     // --- Captured Pieces Logic ---
     // Standard counts
@@ -114,15 +115,27 @@ export const Sidebar = ({ viewMode, onToggleView }: SidebarProps) => {
                 Move History
             </div>
 
-            <div className="move-history">
-                {game.turnNumber > 1 ? (
-                    <div style={{ textAlign: 'center', opacity: 0.5, padding: '10px', fontSize: '0.9em' }}>
-                        History log not yet connected to API
-                    </div>
-                ) : (
+            <div className="move-history" style={{
+                maxHeight: '150px',
+                overflowY: 'auto',
+                background: 'rgba(0,0,0,0.2)',
+                padding: '5px',
+                borderRadius: '4px'
+            }}>
+                {(!game.moveHistory || game.moveHistory.length === 0) ? (
                     <div className="history-row">
                         <span style={{ color: '#888' }}>--</span>
                         <span>Start</span>
+                    </div>
+                ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'min-content 1fr 1fr', gap: '5px' }}>
+                        {Array.from({ length: Math.ceil(game.moveHistory.length / 2) }).map((_, i) => (
+                            <div key={i} style={{ display: 'contents' }}>
+                                <span style={{ color: '#888', marginRight: '5px' }}>{i + 1}.</span>
+                                <span style={{ color: '#fff' }}>{game.moveHistory![i * 2]}</span>
+                                <span style={{ color: '#fff' }}>{game.moveHistory![i * 2 + 1] || ''}</span>
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>
@@ -133,10 +146,26 @@ export const Sidebar = ({ viewMode, onToggleView }: SidebarProps) => {
                 </button>
 
                 <div style={{ display: 'flex', gap: '5px' }}>
-                    <button className="btn-medieval" style={{ flex: 1, fontSize: '0.8em', padding: '8px' }}>
+                    <button
+                        className="btn-medieval"
+                        style={{ flex: 1, fontSize: '0.8em', padding: '8px' }}
+                        onClick={() => {
+                            if (game && window.confirm("Offer a draw?")) {
+                                offerDraw(game.id, game.currentTurn);
+                            }
+                        }}
+                    >
                         Offer Draw
                     </button>
-                    <button className="btn-medieval" style={{ flex: 1, fontSize: '0.8em', padding: '8px', background: 'linear-gradient(180deg, #5c2c2c 0%, #3e1b1b 100%)' }}>
+                    <button
+                        className="btn-medieval"
+                        style={{ flex: 1, fontSize: '0.8em', padding: '8px', background: 'linear-gradient(180deg, #5c2c2c 0%, #3e1b1b 100%)' }}
+                        onClick={() => {
+                            if (game && window.confirm("Are you sure you want to resign?")) {
+                                resignGame(game.id, game.currentTurn);
+                            }
+                        }}
+                    >
                         Resign
                     </button>
                 </div>

@@ -45,7 +45,60 @@ public class GamesController : ControllerBase
         }
     }
 
+    [HttpPost("{id}/resign")]
+    public async Task<ActionResult> Resign(Guid id, [FromBody] PlayerColorRequest request)
+    {
+        try
+        {
+            var result = await _mediator.Send(new MedievalChess.Application.Games.Commands.ResignGame.ResignGameCommand(id, request.Color));
+            if (!result) return BadRequest("Action failed");
+
+            await _hubContext.Clients.Group(id.ToString()).SendAsync("GameStateUpdated", id);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPost("{id}/draw/offer")]
+    public async Task<ActionResult> OfferDraw(Guid id, [FromBody] PlayerColorRequest request)
+    {
+        try
+        {
+            var result = await _mediator.Send(new MedievalChess.Application.Games.Commands.OfferDraw.OfferDrawCommand(id, request.Color));
+            if (!result) return BadRequest("Action failed");
+            
+            // Should probably notify specific user "Draw Offered", but generic update works for now
+            await _hubContext.Clients.Group(id.ToString()).SendAsync("GameStateUpdated", id);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPost("{id}/draw/accept")]
+    public async Task<ActionResult> AcceptDraw(Guid id, [FromBody] PlayerColorRequest request)
+    {
+        try
+        {
+            var result = await _mediator.Send(new MedievalChess.Application.Games.Commands.AcceptDraw.AcceptDrawCommand(id, request.Color));
+            if (!result) return BadRequest("Action failed");
+
+            await _hubContext.Clients.Group(id.ToString()).SendAsync("GameStateUpdated", id);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     public record MoveRequest(string From, string To);
+    public record PlayerColorRequest(MedievalChess.Domain.Enums.PlayerColor Color);
 
     [HttpGet("{id}")]
     public async Task<ActionResult<object>> Get(Guid id)

@@ -1,7 +1,127 @@
 import { useState } from 'react';
 import { useGameStore } from '../../store/useGameStore';
 import { getPieceComponent } from './ChessAssets';
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import './BoardTheme.css';
+
+const ItemTypes = {
+    PIECE: 'piece'
+};
+
+const BoardSquare = ({ x, y, children, onMove, selectedPos, handleSquareClick }: any) => {
+    const alg = `${String.fromCharCode(97 + x)}${y + 1}`;
+    const isDark = (x + y) % 2 === 0;
+    const isSelected = selectedPos === alg;
+
+    const [{ isOver, canDrop }, drop] = useDrop(() => ({
+        accept: ItemTypes.PIECE,
+        drop: (item: any) => onMove(item.from, alg),
+        collect: (monitor) => ({
+            isOver: !!monitor.isOver(),
+            canDrop: !!monitor.canDrop(),
+        }),
+    }), [x, y, onMove]);
+
+    return (
+        <div
+            ref={(node: any) => { drop(node); }}
+            className={`square ${isDark ? 'dark' : 'light'} ${isSelected ? 'highlight-selected' : ''}`}
+            onClick={() => handleSquareClick(alg)}
+            style={{
+                position: 'absolute',
+                width: '12.5%',
+                height: '12.5%',
+                left: `${x * 12.5}%`,
+                top: `${(7 - y) * 12.5}%`,
+                backgroundColor: isOver ? (canDrop ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 0, 0, 0.3)') : undefined
+            }}
+        >
+            {children}
+            {/* Rank Number (Left side only) */}
+            {x === 0 && (
+                <span className={`coord rank`} style={{
+                    position: 'absolute',
+                    left: '2px',
+                    top: '2px',
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold',
+                    color: isDark ? '#d4a373' : '#b58863' // Contrast
+                }}>{y + 1}</span>
+            )}
+            {/* File Letter (Bottom side only) */}
+            {y === 0 && (
+                <span className={`coord file`} style={{
+                    position: 'absolute',
+                    right: '2px',
+                    bottom: '2px',
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold',
+                    color: isDark ? '#d4a373' : '#b58863' // Contrast
+                }}>{String.fromCharCode(97 + x)}</span>
+            )}
+        </div>
+    );
+};
+
+const DraggablePiece = ({ piece, onSelect }: any) => {
+    const PieceComponent = getPieceComponent(piece.type, piece.color);
+
+    const [{ isDragging }, drag] = useDrag(() => ({
+        type: ItemTypes.PIECE,
+        item: { id: piece.position, from: piece.position, type: piece.type },
+        collect: (monitor) => ({
+            isDragging: !!monitor.isDragging(),
+        }),
+    }), [piece]);
+
+    if (!PieceComponent) return null;
+
+    return (
+        <div
+            ref={(node: any) => { drag(node); }}
+            onClick={onSelect}
+            style={{
+                width: '100%',
+                height: '100%',
+                opacity: isDragging ? 0.5 : 1,
+                cursor: 'grab',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: 10
+            }}
+        >
+            <PieceComponent
+                style={{
+                    width: '85%',
+                    height: '85%',
+                    filter: 'drop-shadow(1px 4px 4px rgba(0,0,0,0.5))'
+                }}
+            />
+            {piece.currentHP < piece.maxHP && (
+                <div style={{
+                    position: 'absolute',
+                    bottom: '5%',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '80%',
+                    height: '4px',
+                    background: '#330000',
+                    border: '1px solid #000',
+                    borderRadius: '2px',
+                }}>
+                    <div style={{
+                        width: `${(piece.currentHP / piece.maxHP) * 100}%`,
+                        height: '100%',
+                        background: '#d32f2f',
+                        transition: 'width 0.3s'
+                    }} />
+                </div>
+            )}
+        </div>
+    );
+};
 
 export const Board2D = () => {
     const { game, executeMove } = useGameStore();
@@ -11,18 +131,7 @@ export const Board2D = () => {
     const toAlgebraic = (x: number, y: number) =>
         `${String.fromCharCode(97 + x)}${y + 1}`;
 
-    const getPositionStyle = (alg: string): React.CSSProperties => {
-        if (!alg || alg.length < 2) return {};
-        const file = alg.charCodeAt(0) - 97; // 'a' -> 0
-        const rank = parseInt(alg[1]) - 1;   // '1' -> 0
 
-        // rank 0 is bottom (high percentage top), rank 7 is top (low percentage top)
-        // 8x8 grid -> each is 12.5%
-        return {
-            left: `${file * 12.5}%`,
-            top: `${(7 - rank) * 12.5}%`
-        };
-    };
 
     const handleSquareClick = (alg: string) => {
         if (!game) return;
@@ -55,132 +164,60 @@ export const Board2D = () => {
 
     if (!game) return null;
 
-    // --- Render Grid (Background) ---
-    // We render this efficiently once
-    const gridSquares = [];
+    const handleMove = (from: string, to: string) => {
+        if (from === to) return;
+        executeMove(game.id, from, to);
+        setSelectedPos(null);
+    };
+
+    // --- Render Board Squares ---
+    const squares = [];
     for (let rank = 7; rank >= 0; rank--) {
         for (let file = 0; file < 8; file++) {
-            const isDark = (file + rank) % 2 === 0;
             const alg = toAlgebraic(file, rank);
-            const isSelected = selectedPos === alg;
+            const piece = game.pieces.find(p => p.position === alg);
 
-            // Highlight logic helpers
-            // (In a real app, 'last moved' squares would come from moveHistory)
-
-            gridSquares.push(
-                <div
+            squares.push(
+                <BoardSquare
                     key={alg}
-                    className={`square ${isDark ? 'dark' : 'light'} ${isSelected ? 'highlight-selected' : ''}`}
-                    onClick={() => handleSquareClick(alg)}
-                    style={{
-                        position: 'absolute',
-                        width: '12.5%',
-                        height: '12.5%',
-                        ...getPositionStyle(alg)
-                        // Note: top/left reuse same logic as pieces
-                    }}
+                    x={file}
+                    y={rank}
+                    onMove={handleMove}
+                    selectedPos={selectedPos}
+                    handleSquareClick={handleSquareClick}
                 >
-                    {/* Rank Number (Left side only) */}
-                    {file === 0 && (
-                        <span className={`coord rank`}>{rank + 1}</span>
+                    {piece && (
+                        <DraggablePiece
+                            piece={piece}
+                            onSelect={() => handleSquareClick(alg)}
+                        />
                     )}
-
-                    {/* File Letter (Bottom side only) */}
-                    {rank === 0 && (
-                        <span className={`coord file`}>{String.fromCharCode(97 + file)}</span>
-                    )}
-                </div>
+                </BoardSquare>
             );
         }
     }
 
-    // --- Render Pieces (Foreground Layer) ---
-    // These are rendered OUTSIDE the squares so they can animate between them
-    const pieceElements = game.pieces.map((piece) => {
-        const PieceComponent = getPieceComponent(piece.type, piece.color);
-        if (!PieceComponent) return null;
-
-        // Unique key is crucial for animation. ideally piece.id, but assume index or similar if no ID.
-        // If piece objects are stable references, we can key by type+coord (but coord changes).
-        // Best to use an ID if available. Looking at store: GameState pieces doesn't show ID.
-        // We will construct a synthetic key based on starting position or a stable ID if we had one.
-        // For now, keying by index in array MIGHT cause component remounting if array shuffles.
-        // BETTER: If no ID, we accept that 'same type same color' at new pos is same piece? 
-        // No, that fails promotion.
-        // Let's rely on React diffing. To animate, the DIV needs to move.
-        // So key needs to be PERSISTENT for that piece instance.
-        // CRITICAL: Without piece IDs, animations might be jumpy if the array order changes.
-        // Assuming array order is relatively stable or we use index as key strictly 
-        // if pieces array represents "slot 0 piece", "slot 1 piece".
-        // But likely pieces list changes length on capture.
-        // WORKAROUND: Generate a weak key: `${piece.color}-${piece.type}-${piece.position}` 
-        // -> wait, position changes, so key changing means REMOUNT which KILLS animation.
-        // Component needs to stay, style needs to change.
-        // We need a stable identifier. If not in DB, maybe we just use index and hope list is stable?
-        // Let's assume list is "All pieces currently on board".
-        // Use index for now as fallback.
-
-        return (
-            <div
-                key={`${piece.color}-${piece.type}-${game.pieces.indexOf(piece)}`}
-                className="chess-piece-container"
-                style={{
-                    position: 'absolute',
-                    width: '12.5%',
-                    height: '12.5%',
-                    transition: 'all 0.3s ease-in-out', // THE ANIMATION MAGIC
-                    pointerEvents: 'none', // Clicks go through to grid for validation
-                    zIndex: 10,
-                    ...getPositionStyle(piece.position)
-                }}
-            >
-                <PieceComponent
-                    style={{
-                        width: '85%',
-                        height: '85%',
-                        filter: 'drop-shadow(1px 4px 4px rgba(0,0,0,0.5))'
-                    }}
-                />
-                {/* HP Bar */}
-                {piece.currentHP < piece.maxHP && (
-                    <div style={{
-                        position: 'absolute',
-                        bottom: '5%',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        width: '80%',
-                        height: '4px',
-                        background: '#330000',
-                        border: '1px solid #000',
-                        borderRadius: '2px',
-                    }}>
-                        <div style={{
-                            width: `${(piece.currentHP / piece.maxHP) * 100}%`,
-                            height: '100%',
-                            background: '#d32f2f',
-                            transition: 'width 0.3s'
-                        }} />
-                    </div>
-                )}
-            </div>
-        );
-    });
-
     return (
-        <div style={{
-            width: '100%',
-            maxWidth: '600px',
-            padding: '20px',
-            display: 'flex',
-            justifyContent: 'center'
-        }}>
-            <div className="medieval-board">
-                {/* 1. Grid Layer */}
-                {gridSquares}
+        <DndProvider backend={HTML5Backend}>
+            <div style={{
+                width: '100%',
+                maxWidth: '600px',
+                padding: '20px',
+                display: 'flex',
+                justifyContent: 'center',
+                flexDirection: 'column',
+                alignItems: 'center'
+            }}>
+                <div className="medieval-board" style={{ position: 'relative', width: '100%', paddingBottom: '100%', height: 0 }}>
+                    {squares}
+                </div>
 
-                {/* 2. Piece Layer */}
-                {pieceElements}
+                {/* External Labels (Optional: if we want them outside instead of inside) */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginTop: '10px', fontWeight: 'bold', color: '#5c2c2c' }}>
+                    <span>White: Bottom (1)</span>
+                    <span>Black: Top (8)</span>
+                </div>
             </div>
-        </div>
+        </DndProvider>
     );
 };

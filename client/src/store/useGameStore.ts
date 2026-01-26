@@ -28,6 +28,9 @@ interface GameStore {
     createGame: () => Promise<string | null>;
     executeMove: (id: string, from: string, to: string) => Promise<void>;
     connectHub: (gameId: string) => Promise<void>;
+    resignGame: (id: string, color: number) => Promise<void>;
+    offerDraw: (id: string, color: number) => Promise<void>;
+    acceptDraw: (id: string, color: number) => Promise<void>;
 }
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -92,6 +95,27 @@ export const useGameStore = create<GameStore>((set) => ({
             console.log("Connected to GameHub");
         } catch (err) {
             console.error("SignalR Connection Error: ", err);
+        }
+    },
+    resignGame: async (id: string, color: number) => {
+        try {
+            await axios.post(`/api/Games/${id}/resign`, { color });
+        } catch (err: any) {
+            console.error(err);
+        }
+    },
+    offerDraw: async (id: string, color: number) => {
+        try {
+            await axios.post(`/api/Games/${id}/draw/offer`, { color });
+        } catch (err: any) {
+            console.error(err);
+        }
+    },
+    acceptDraw: async (id: string, color: number) => {
+        try {
+            await axios.post(`/api/Games/${id}/draw/accept`, { color });
+        } catch (err: any) {
+            console.error(err);
         }
     }
 }));

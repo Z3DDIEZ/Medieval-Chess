@@ -1,5 +1,7 @@
 {
   "dependencies": {
-    "@microsoft/signalr": "^10.0.0"
+    "@microsoft/signalr": "^10.0.0",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1"
   }
 }

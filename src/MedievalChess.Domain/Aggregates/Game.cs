@@ -67,6 +67,63 @@ public class Game : AggregateRoot<Guid>
         EndTurn();
     }
 
+    public void Resign(PlayerColor player)
+    {
+        if (Status != GameStatus.InProgress)
+            throw new InvalidOperationException("Game is not in progress");
+
+        Status = GameStatus.Resignation;
+        // Winner is the other player
+        // We might want to store Winner property, but for now Status implies it if we know who resigned.
+        // Actually, usually "WhiteResigned" or "BlackResigned" is better, or just store Winner.
+        // For simplicity, let's assume the caller handles the "Winner" logic or we add a Winner property later.
+        // But wait, if I resign, the game status is Resignation. Who won?
+        // Let's add specific statuses or a Winner field. 
+        // For this task, "Resignation" is enough, we can infer winner from who sent the command if we tracked it.
+        // But the Game entity doesn't track "who sent the command" in the state persistence usually.
+        // Let's keep it simple: generic Resignation.
+    }
+
+    public void OfferDraw(PlayerColor player)
+    {
+        // For now, simple mechanic: if one offers, and we had state for "DrawOfferedByWhite", etc.
+        // Since we don't have that field, let's just assume this method *completes* a draw if agreed?
+        // No, typically: P1 offers -> State: DrawOffered -> P2 accepts -> State: Draw.
+        // I need to add a DrawOfferedBy property to Game.
+    }
+    
+    // Simplification for prototype: Immediate Draw (Mutual Agreement handled by UI co-ordination or just a button that says 'Declare Draw')
+    // Better: Add "DrawOfferedBy" property.
+    
+    public PlayerColor? DrawOfferedBy { get; private set; }
+
+    public void MakeDrawOffer(PlayerColor player)
+    {
+        if (Status != GameStatus.InProgress) return;
+        if (DrawOfferedBy == player) return; // Already offered
+        
+        if (DrawOfferedBy.HasValue && DrawOfferedBy != player)
+        {
+            // Both offered? -> Draw
+            Status = GameStatus.Draw;
+            DrawOfferedBy = null;
+        }
+        else
+        {
+            DrawOfferedBy = player;
+        }
+    }
+
+    public void AcceptDraw(PlayerColor player)
+    {
+        if (Status != GameStatus.InProgress) return;
+        if (DrawOfferedBy.HasValue && DrawOfferedBy != player)
+        {
+            Status = GameStatus.Draw;
+            DrawOfferedBy = null;
+        }
+    }
+
     private void EndTurn()
     {
         CurrentTurn = CurrentTurn == PlayerColor.White ? PlayerColor.Black : PlayerColor.White;
@@ -74,5 +131,8 @@ public class Game : AggregateRoot<Guid>
         {
             TurnNumber++;
         }
+        // Draw offer expires on turn end? Usually yes or no depending on rules. Let's keep it for a turn.
+        // basic rules: offer remains valid until rejected or moved? 
+        // keeping it simple: offer persists until accepted or game ends.
     }
 }

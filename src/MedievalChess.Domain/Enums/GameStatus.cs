@@ -7,5 +7,6 @@ public enum GameStatus
     Checkmate,
     Stalemate,
     Draw,
-    Forfeit
+    Forfeit,
+    Resignation
 }
