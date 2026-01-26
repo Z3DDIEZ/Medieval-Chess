@@ -1,0 +1,146 @@
+import { useGameStore } from '../../store/useGameStore';
+import { getPieceComponent } from './ChessAssets';
+import './BoardTheme.css';
+
+interface SidebarProps {
+    viewMode: '3d' | '2d';
+    onToggleView: () => void;
+}
+
+export const Sidebar = ({ viewMode, onToggleView }: SidebarProps) => {
+    const { game, loading, error } = useGameStore();
+
+    if (loading) return <div className="game-sidebar">Loading Realm...</div>;
+    if (error) return <div className="game-sidebar">Error: {error}</div>;
+    if (!game) return <div className="game-sidebar">No active game</div>;
+
+    const isWhiteTurn = game.currentTurn === 0;
+
+    // --- Captured Pieces Logic ---
+    // Standard counts
+    const initialCounts = {
+        0: { 0: 8, 1: 2, 2: 2, 3: 2, 4: 1, 5: 1 }, // White
+        1: { 0: 8, 1: 2, 2: 2, 3: 2, 4: 1, 5: 1 }  // Black
+    };
+
+    // Count current pieces
+    const currentCounts = {
+        0: { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+        1: { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+    };
+
+    game.pieces.forEach(p => {
+        // @ts-ignore - indexing number to number key
+        if (currentCounts[p.color]) currentCounts[p.color][p.type]++;
+    });
+
+    // Determine Captured
+    const getCapturedList = (color: number) => {
+        const captured: number[] = [];
+        for (let type = 0; type <= 4; type++) { // Don't track Kings usually, game ends
+            // @ts-ignore
+            const count = initialCounts[color][type] - currentCounts[color][type];
+            for (let i = 0; i < count; i++) {
+                captured.push(type);
+            }
+        }
+        // Sort for nice display (Pawn < Knight < Bishop < Rook < Queen)
+        return captured.sort((a, b) => a - b);
+    };
+
+    const whiteCaptured = getCapturedList(0); // White pieces lost (Material for Black)
+    const blackCaptured = getCapturedList(1); // Black pieces lost (Material for White)
+
+    const renderCapturedRow = (capturedTypes: number[], pieceColor: number) => {
+        return (
+            <div style={{ height: '30px', display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+                {capturedTypes.map((type, idx) => {
+                    const PieceComp = getPieceComponent(type, pieceColor);
+                    if (!PieceComp) return null;
+                    return (
+                        <div key={idx} style={{ width: '20px', height: '20px', marginLeft: '-5px' }}>
+                            <PieceComp style={{ width: '100%', height: '100%' }} />
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
+    return (
+        <aside className="game-sidebar">
+            <header className="sidebar-header">
+                <h1 className="sidebar-title">Medieval Chess</h1>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                    Match ID: {game.id.substring(0, 8)}...
+                </div>
+            </header>
+
+            <div className="status-card">
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    marginBottom: '10px'
+                }}>
+                    <div style={{
+                        width: '12px',
+                        height: '12px',
+                        borderRadius: '50%',
+                        backgroundColor: isWhiteTurn ? '#fff' : '#000',
+                        border: '1px solid #666'
+                    }} />
+                    <span style={{ fontWeight: 'bold', fontSize: '1.1em' }}>
+                        {isWhiteTurn ? "White's Turn" : "Black's Turn"}
+                    </span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9em' }}>
+                    <span>Turn #{game.turnNumber}</span>
+                    <span style={{ color: '#e6c68b' }}>{game.status}</span>
+                </div>
+
+                {/* Captured Pieces Display */}
+                <div style={{ marginTop: '15px', borderTop: '1px solid #4a3c31', paddingTop: '10px' }}>
+                    <div style={{ fontSize: '0.8em', color: '#888', marginBottom: '2px' }}>Advantage White</div>
+                    {renderCapturedRow(blackCaptured, 1)}
+
+                    <div style={{ fontSize: '0.8em', color: '#888', marginBottom: '2px', marginTop: '6px' }}>Advantage Black</div>
+                    {renderCapturedRow(whiteCaptured, 0)}
+                </div>
+            </div>
+
+            <div style={{ marginBottom: '8px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
+                Move History
+            </div>
+
+            <div className="move-history">
+                {game.turnNumber > 1 ? (
+                    <div style={{ textAlign: 'center', opacity: 0.5, padding: '10px', fontSize: '0.9em' }}>
+                        History log not yet connected to API
+                    </div>
+                ) : (
+                    <div className="history-row">
+                        <span style={{ color: '#888' }}>--</span>
+                        <span>Start</span>
+                    </div>
+                )}
+            </div>
+
+            <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <button className="btn-medieval" onClick={onToggleView}>
+                    Switch to {viewMode === '3d' ? '2D Map' : '3D View'}
+                </button>
+
+                <div style={{ display: 'flex', gap: '5px' }}>
+                    <button className="btn-medieval" style={{ flex: 1, fontSize: '0.8em', padding: '8px' }}>
+                        Offer Draw
+                    </button>
+                    <button className="btn-medieval" style={{ flex: 1, fontSize: '0.8em', padding: '8px', background: 'linear-gradient(180deg, #5c2c2c 0%, #3e1b1b 100%)' }}>
+                        Resign
+                    </button>
+                </div>
+            </div>
+        </aside>
+    );
+};

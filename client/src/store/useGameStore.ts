@@ -17,6 +17,7 @@ interface GameState {
     currentTurn: number;
     turnNumber: number;
     pieces: Piece[];
+    moveHistory?: string[]; // Algebraic notation moves e.g. ["e2e4", "e7e5"]
 }
 
 interface GameStore {
