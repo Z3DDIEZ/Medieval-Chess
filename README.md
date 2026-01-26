@@ -4,10 +4,10 @@
 
 | Attribute | Details |
 | :--- | :--- |
-| **Status** | 🚧 Phase 4: Frontend Prototype (In Progress) |
+| **Status** | ✅ **Prototype Live** (Phase 4 Complete) |
 | **Core Logic** | ✅ Implemented & Tested (DDD pattern) |
 | **API** | ✅ Running (ASP.NET Core 9 / MediatR) |
-| **Tech Stack** | .NET 9, React 18, PostgreSQL, SignalR |
+| **Frontend** | ✅ 3D Board (React Three Fiber) |
 | **Docs** | [Architecture](docs/architecture-model.md) • [Ruleset](docs/ruleset-model.md) • [Security](docs/security-model.md) |
 
 ## ⚔️ Project Overview
@@ -37,6 +37,11 @@ This project follows **Clean Architecture** and **Domain-Driven Design (DDD)** p
 *   **REST API**: Exposes game state management.
 *   **Infrastructure**: In-Memory persistence (Repository Pattern).
 
+### 3. Frontend Client (`client/`)
+*   **React 18 + Vite**: Fast SPA framework.
+*   **React Three Fiber**: Declarative 3D rendering.
+*   **Zustand**: Lightweight state management.
+
 ---
 
 ## 🚀 Getting Started
@@ -45,21 +50,20 @@ This project follows **Clean Architecture** and **Domain-Driven Design (DDD)** p
 *   .NET 9.0 SDK
 *   Node.js 20+
 
-### 1. Run the API
-The backend serves the game logic and state.
-
+### 1. Run the API (Backend)
+Open a terminal in the root folder:
 ```powershell
 dotnet run --project src/MedievalChess.Api/MedievalChess.Api.csproj
 ```
-*   **Swagger UI**: `http://localhost:<port>/swagger`
-*   **Test Game ID**: `11111111-1111-1111-1111-111111111111` (Seeded automatically)
+The API will start on `http://localhost:5267` (or similar).
 
-### 2. Run Domain Tests
-Verify the rules engine logic:
-
+### 2. Run the Game (Frontend)
+Open a **new** terminal in the `client/` folder:
 ```powershell
-dotnet test
+cd client
+npm run dev
 ```
+Open the URL shown (e.g., `http://localhost:5173`). The game will automatically create a new match and load the board.
 
 ---
 
@@ -78,8 +82,12 @@ dotnet test
 - [x] REST Endpoints (POST /games, GET /games/{id})
 - [x] Verification (Swagger + Curl)
 
-### Phase 4: Frontend Prototype (Current Focus) 🚧
-- [ ] Initialize React + Vite project
-- [ ] Setup Three.js (React Three Fiber)
-- [ ] Render 3D Board
-- [ ] Fetch Game State from API
+### Phase 4: Frontend Prototype ✅
+- [x] React + Vite + Three.js Setup
+- [x] 3D Board & Piece Rendering
+- [x] Full Stack Integration (Auto-Game Creation)
+
+### Upcoming Features
+- [ ] Move Interaction (Drag & Drop)
+- [ ] SignalR Real-time Updates
+- [ ] Feudal Loyalty Visuals
