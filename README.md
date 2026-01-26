@@ -4,7 +4,7 @@
 
 | Attribute | Details |
 | :--- | :--- |
-| **Status** | ✅ **Prototype Live** (Phase 4 Complete) |
+| **Status** | 🚧 Phase 5: Movement & Interaction (In Progress) |
 | **Core Logic** | ✅ Implemented & Tested (DDD pattern) |
 | **API** | ✅ Running (ASP.NET Core 9 / MediatR) |
 | **Frontend** | ✅ 3D Board (React Three Fiber) |
@@ -87,7 +87,17 @@ Open the URL shown (e.g., `http://localhost:5173`). The game will automatically 
 - [x] 3D Board & Piece Rendering
 - [x] Full Stack Integration (Auto-Game Creation)
 
-### Upcoming Features
-- [ ] Move Interaction (Drag & Drop)
-- [ ] SignalR Real-time Updates
-- [ ] Feudal Loyalty Visuals
+### Phase 5: Movement (Current Focus) 🚧
+- [ ] Drag & Drop Interface
+- [ ] Move Validation (Server-side)
+
+### Phase 6: Feudal Loyalty
+- [ ] Loyalty Graph Visualization
+- [ ] Status Effects
+
+### Phase 7: Real-time Sync
+- [ ] SignalR Integration
+
+### Phase 8: 2D Mode
+- [ ] In-Game Toggle
+- [ ] standard 2D Chess Board implementation

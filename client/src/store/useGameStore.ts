@@ -1,10 +1,14 @@
 import { create } from 'zustand';
 import axios from 'axios';
+import { HubConnectionBuilder } from '@microsoft/signalr';
 
 interface Piece {
     type: number; // Enum value
     color: number; // 0=White, 1=Black
     position: string; // "e4"
+    loyalty: number;
+    maxHP: number;
+    currentHP: number;
 }
 
 interface GameState {
@@ -21,6 +25,8 @@ interface GameStore {
     error: string | null;
     fetchGame: (id: string) => Promise<void>;
     createGame: () => Promise<string | null>;
+    executeMove: (id: string, from: string, to: string) => Promise<void>;
+    connectHub: (gameId: string) => Promise<void>;
 }
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -52,6 +58,39 @@ export const useGameStore = create<GameStore>((set) => ({
         } catch (err: any) {
             set({ error: err.message, loading: false });
             return null;
+        }
+    },
+    executeMove: async (id: string, from: string, to: string) => {
+        try {
+            await axios.post(`/api/Games/${id}/moves`, { from, to });
+            // Refresh state after move - SignalR will handle it for opponent, but we can do optimistic/immediate too
+            const response = await axios.get(`/api/Games/${id}`);
+            set({ game: response.data });
+        } catch (err: any) {
+            console.error(err);
+            set({ error: err.response?.data || "Move failed" });
+        }
+    },
+    connectHub: async (gameId: string) => {
+        const connection = new HubConnectionBuilder()
+            .withUrl("/gameHub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("GameStateUpdated", async (id: string) => {
+            if (id === gameId) {
+                // Refresh game state
+                const response = await axios.get(`/api/Games/${id}`);
+                set({ game: response.data });
+            }
+        });
+
+        try {
+            await connection.start();
+            await connection.invoke("JoinGame", gameId);
+            console.log("Connected to GameHub");
+        } catch (err) {
+            console.error("SignalR Connection Error: ", err);
         }
     }
 }));

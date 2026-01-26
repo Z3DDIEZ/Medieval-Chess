@@ -52,9 +52,18 @@ public class Game : AggregateRoot<Guid>
             
             // Capture logic
             targetPiece.TakeDamage(999); // Instant capture for Phase 1
+            
+            // Trigger Loyalty Panic
+            var loyaltyManager = new Logic.LoyaltyManager(this);
+            loyaltyManager.OnPieceCaptured(targetPiece);
         }
 
         piece.MoveTo(to);
+        
+        // Update Loyalty for everyone (passive bonuses)
+        var loyaltyUpdate = new Logic.LoyaltyManager(this);
+        loyaltyUpdate.UpdateLoyalty();
+
         EndTurn();
     }
 

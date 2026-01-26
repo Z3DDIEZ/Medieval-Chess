@@ -9,7 +9,7 @@ public class Piece : AggregateRoot<Guid>
     public PieceType Type { get; private set; }
     public PlayerColor Color { get; private set; }
     public Position? Position { get; private set; } // Null if captured
-    public LoyaltyValue Loyalty { get; private set; }
+    public LoyaltyValue Loyalty { get; internal set; }
     
     // Progression
     public int Level { get; private set; }

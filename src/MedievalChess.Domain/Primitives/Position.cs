@@ -35,6 +35,13 @@ public readonly struct Position : IEquatable<Position>
         return $"{(char)('a' + File)}{(char)('1' + Rank)}";
     }
 
+    public bool IsAdjacentTo(Position other)
+    {
+        int fileDiff = Math.Abs(File - other.File);
+        int rankDiff = Math.Abs(Rank - other.Rank);
+        return fileDiff <= 1 && rankDiff <= 1;
+    }
+
     public bool IsEquivalent(Position other) => File == other.File && Rank == other.Rank;
     public override bool Equals(object? obj) => obj is Position other && Equals(other);
     public bool Equals(Position other) => File == other.File && Rank == other.Rank;
