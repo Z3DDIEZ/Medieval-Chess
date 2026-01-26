@@ -1,0 +1,16 @@
+# Medieval Chess Code Owners
+
+# Global default
+*       @Z3DDIEZ
+
+# Backend
+/*.cs    @Z3DDIEZ
+/api/    @Z3DDIEZ
+
+# Frontend
+/*.ts    @Z3DDIEZ
+/*.tsx   @Z3DDIEZ
+/src/    @Z3DDIEZ
+
+# Documentation
+/docs/   @Z3DDIEZ
