@@ -1,0 +1,16 @@
+# Agent Docs
+AG-docs/
+
+# IDE
+.vscode/
+.idea/
+
+# Dotnet
+bin/
+obj/
+*.user
+
+# Node
+node_modules/
+dist/
+build/
