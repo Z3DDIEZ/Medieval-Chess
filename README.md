@@ -30,4 +30,4 @@ Medieval Chess re-imagines the classic game by enforcing the social structures o
 4. **Frontend Prototype**: basic 3D board with move validation
 
 ## Agent Planning
-*Note: Internal agent logs and planning documents are located in `AG-docs/` (gitignored).*
+*Note: Internal agent logs and developer planning documents are located in `AG-docs/` (gitignored).*
