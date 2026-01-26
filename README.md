@@ -87,17 +87,18 @@ Open the URL shown (e.g., `http://localhost:5173`). The game will automatically 
 - [x] 3D Board & Piece Rendering
 - [x] Full Stack Integration (Auto-Game Creation)
 
-### Phase 5: Movement (Current Focus) 🚧
-- [ ] Drag & Drop Interface
-- [ ] Move Validation (Server-side)
+### Phase 5: Movement & Interaction ✅
+- [x] Drag & Drop / Click-to-Move Interface
+- [x] Move Validation (Server-side & Client-side)
 
-### Phase 6: Feudal Loyalty
-- [ ] Loyalty Graph Visualization
-- [ ] Status Effects
+### Phase 6: Feudal Loyalty ✅
+- [x] Loyalty Graph & Logic
+- [x] Status Effects (Loyalty/HP Stats)
 
-### Phase 7: Real-time Sync
-- [ ] SignalR Integration
+### Phase 7: Real-time Sync ✅
+- [x] SignalR Integration (Live Updates)
 
-### Phase 8: 2D Mode
-- [ ] In-Game Toggle
-- [ ] standard 2D Chess Board implementation
+### Phase 8: 2D & 3D Visualization Modes ✅
+- [x] In-Game Toggle (3D Immersive / 2D Tactical)
+- [x] SVG-based 2D Board Implementation
+
