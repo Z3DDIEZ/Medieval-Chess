@@ -4,42 +4,35 @@ using MedievalChess.Domain.Primitives;
 
 namespace MedievalChess.Domain.Entities;
 
-public class Piece : AggregateRoot<Guid>
+public abstract class Piece : AggregateRoot<Guid>
 {
-    public PieceType Type { get; private set; }
+    public abstract PieceType Type { get; }
     public PlayerColor Color { get; private set; }
     public Position? Position { get; internal set; } // Null if captured
     public LoyaltyValue Loyalty { get; internal set; }
     
     // Progression
-    public int Level { get; private set; }
-    public int XP { get; private set; }
+    public int Level { get; protected set; }
+    public int XP { get; protected set; }
     
     // Combat (Attrition Mode)
-    public int MaxHP { get; private set; }
-    public int CurrentHP { get; private set; }
+    public int MaxHP { get; protected set; }
+    public int CurrentHP { get; protected set; }
     
     public bool IsCaptured => Position == null;
 
-    // Factory method for creation
-    public static Piece Create(PieceType type, PlayerColor color, Position position)
+    protected Piece(PlayerColor color, Position position)
     {
-        var piece = new Piece
-        {
-            Id = Guid.NewGuid(),
-            Type = type,
-            Color = color,
-            Position = position,
-            Loyalty = new LoyaltyValue(80), // Default Loyal
-            Level = 1,
-            XP = 0,
-            MaxHP = CalculateBaseHP(type),
-            CurrentHP = CalculateBaseHP(type)
-        };
-        return piece;
+        Id = Guid.NewGuid();
+        Color = color;
+        Position = position;
+        Loyalty = new LoyaltyValue(80); // Default Loyal
+        Level = 1;
+        XP = 0;
+        // HP Initialization depends on concrete class, will be set in constructor or init
     }
 
-    private Piece() { } // EF Core requirement
+    protected Piece() { } // EF Core requirement
 
     public void MoveTo(Position newPosition)
     {
@@ -69,14 +62,9 @@ public class Piece : AggregateRoot<Guid>
         }
     }
 
-    private static int CalculateBaseHP(PieceType type) => type switch
-    {
-        PieceType.Pawn => 20,
-        PieceType.Knight => 40,
-        PieceType.Bishop => 40,
-        PieceType.Rook => 60,
-        PieceType.Queen => 80,
-        PieceType.King => 100,
-        _ => 20
-    };
+    /// <summary>
+    /// Returns moves that are valid according to the piece's geometric rules, 
+    /// ignoring check/pin constraints.
+    /// </summary>
+    public abstract IEnumerable<Position> GetPseudoLegalMoves(Position from, Board board);
 }

@@ -11,6 +11,11 @@ public class Game : AggregateRoot<Guid>
     public PlayerColor CurrentTurn { get; private set; }
     public GameStatus Status { get; private set; }
     public int TurnNumber { get; private set; }
+    
+    private readonly List<Move> _playedMoves = new();
+    public IReadOnlyCollection<Move> PlayedMoves => _playedMoves.AsReadOnly();
+
+    public PlayerColor? DrawOfferedBy { get; private set; }
 
     private Game() 
     {
@@ -41,13 +46,21 @@ public class Game : AggregateRoot<Guid>
         }
         
         var piece = Board.GetPieceAt(from); 
-        // Note: piece is guaranteed !null and Correct Color by IsMoveLegal, but strict null check is fine
         if (piece == null) throw new InvalidOperationException("System Error: Piece vanished during validation");
 
         var targetPiece = Board.GetPieceAt(to);
+        
+        // Record Move
+        var move = new Move(from, to, piece, targetPiece);
+        move.Notation = $"{piece.Type.ToString()[0]}{to.ToAlgebraic()}"; // Simplified notation (e.g. "Pd4", "Nf3") - TODO: Full algebraic
+        _playedMoves.Add(move);
+
         if (targetPiece != null)
         {
-            // Capture logic
+            // Capture logic (Standard Chess / Medieval Attrition base)
+            // For now, Standard Chess: Capture = Remove (Capture happens if HP hits 0, but standard chess HP is effectively 1 or manual logic)
+            // The existing code had TakeDamage(999).
+            
             targetPiece.TakeDamage(999); 
             
             var loyaltyManager = new Logic.LoyaltyManager(this);
@@ -87,29 +100,8 @@ public class Game : AggregateRoot<Guid>
             throw new InvalidOperationException("Game is not in progress");
 
         Status = GameStatus.Resignation;
-        // Winner is the other player
-        // We might want to store Winner property, but for now Status implies it if we know who resigned.
-        // Actually, usually "WhiteResigned" or "BlackResigned" is better, or just store Winner.
-        // For simplicity, let's assume the caller handles the "Winner" logic or we add a Winner property later.
-        // But wait, if I resign, the game status is Resignation. Who won?
-        // Let's add specific statuses or a Winner field. 
-        // For this task, "Resignation" is enough, we can infer winner from who sent the command if we tracked it.
-        // But the Game entity doesn't track "who sent the command" in the state persistence usually.
-        // Let's keep it simple: generic Resignation.
+        // Logic for winner would go here
     }
-
-    public void OfferDraw(PlayerColor player)
-    {
-        // For now, simple mechanic: if one offers, and we had state for "DrawOfferedByWhite", etc.
-        // Since we don't have that field, let's just assume this method *completes* a draw if agreed?
-        // No, typically: P1 offers -> State: DrawOffered -> P2 accepts -> State: Draw.
-        // I need to add a DrawOfferedBy property to Game.
-    }
-    
-    // Simplification for prototype: Immediate Draw (Mutual Agreement handled by UI co-ordination or just a button that says 'Declare Draw')
-    // Better: Add "DrawOfferedBy" property.
-    
-    public PlayerColor? DrawOfferedBy { get; private set; }
 
     public void MakeDrawOffer(PlayerColor player)
     {
@@ -118,7 +110,7 @@ public class Game : AggregateRoot<Guid>
         
         if (DrawOfferedBy.HasValue && DrawOfferedBy != player)
         {
-            // Both offered? -> Draw
+            // Both offered -> Draw
             Status = GameStatus.Draw;
             DrawOfferedBy = null;
         }
@@ -136,17 +128,5 @@ public class Game : AggregateRoot<Guid>
             Status = GameStatus.Draw;
             DrawOfferedBy = null;
         }
-    }
-
-    private void EndTurn()
-    {
-        CurrentTurn = CurrentTurn == PlayerColor.White ? PlayerColor.Black : PlayerColor.White;
-        if (CurrentTurn == PlayerColor.White)
-        {
-            TurnNumber++;
-        }
-        // Draw offer expires on turn end? Usually yes or no depending on rules. Let's keep it for a turn.
-        // basic rules: offer remains valid until rejected or moved? 
-        // keeping it simple: offer persists until accepted or game ends.
     }
 }
