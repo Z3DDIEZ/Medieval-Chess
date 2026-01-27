@@ -22,7 +22,10 @@ function App() {
   const { fetchGame, createGame, connectHub, game } = useGameStore();
   const [viewMode, setViewMode] = useState<'3d' | '2d'>('3d');
   const [selectedPiecePos, setSelectedPiecePos] = useState<string | null>(null);
-  const [autoRotateCamera, setAutoRotateCamera] = useState(true); // Enable by default for dev
+  const [autoRotateCamera, setAutoRotateCamera] = useState(true); // Auto-rotate on turn change
+  const [freeCam, setFreeCam] = useState(false); // Free cam allows manual orbit
+  const [cameraAnimating, setCameraAnimating] = useState(false); // Track if camera is rotating
+  const [boardFlipped, setBoardFlipped] = useState(false); // Flip board perspective
 
   useEffect(() => {
     const initGame = async () => {
@@ -45,6 +48,9 @@ function App() {
   // Current turn for camera rotation (default to White if no game)
   const currentTurn = game?.currentTurn ?? 0;
 
+  // OrbitControls enabled only when freeCam is ON and camera is not animating
+  const orbitEnabled = freeCam && !cameraAnimating;
+
   return (
     <div style={{ width: '100vw', height: '100vh', background: '#111', display: 'flex' }}>
 
@@ -53,6 +59,10 @@ function App() {
         onToggleView={() => setViewMode(v => v === '3d' ? '2d' : '3d')}
         autoRotateCamera={autoRotateCamera}
         onToggleAutoRotate={() => setAutoRotateCamera(v => !v)}
+        freeCam={freeCam}
+        onToggleFreeCam={() => setFreeCam(v => !v)}
+        boardFlipped={boardFlipped}
+        onToggleBoardFlip={() => setBoardFlipped(v => !v)}
       />
 
       {/* Main Viewport */}
@@ -60,10 +70,16 @@ function App() {
         {viewMode === '3d' ? (
           <Canvas shadows camera={{ position: [0, 8, 6], fov: 50 }}>
             {/* Turn-based camera controller */}
-            <TurnBasedCamera currentTurn={currentTurn} enabled={autoRotateCamera} />
+            <TurnBasedCamera
+              currentTurn={currentTurn}
+              enabled={autoRotateCamera}
+              freeCam={freeCam}
+              onAnimatingChange={setCameraAnimating}
+            />
 
-            {/* Allow manual orbit when auto-rotate is off */}
+            {/* Allow manual orbit only when freeCam is enabled and not animating */}
             <OrbitControls
+              enabled={orbitEnabled}
               enablePan={false}
               minPolarAngle={0.3}
               maxPolarAngle={Math.PI / 2.2}
@@ -91,7 +107,7 @@ function App() {
             background: 'radial-gradient(circle at center, #2c241b 0%, #15100c 100%)',
             touchAction: 'none' // Prevent two-finger gestures/scrolling
           }}>
-            <Board2D onPieceSelect={setSelectedPiecePos} />
+            <Board2D onPieceSelect={setSelectedPiecePos} flipped={boardFlipped} />
           </div>
         )}
       </div>

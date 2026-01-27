@@ -1,33 +1,47 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import * as THREE from 'three';
 
 interface TurnBasedCameraProps {
     currentTurn: number; // 0 = White, 1 = Black
-    enabled?: boolean;
+    enabled?: boolean;   // Auto-rotate on turn change
+    freeCam?: boolean;   // When true, allow orbit after animation completes
+    onAnimatingChange?: (isAnimating: boolean) => void; // Callback for animation state
 }
 
 /**
  * Camera controller that rotates laterally around the board based on turn.
- * White (turn 0): Faces from south side
- * Black (turn 1): Faces from north side (180° rotation around Y axis)
+ * Supports smooth rotation even with free cam - disables orbit during transition.
  */
-export const TurnBasedCamera = ({ currentTurn, enabled = true }: TurnBasedCameraProps) => {
+export const TurnBasedCamera = ({
+    currentTurn,
+    enabled = true,
+    freeCam = false,
+    onAnimatingChange
+}: TurnBasedCameraProps) => {
     const { camera } = useThree();
     const targetAngle = useRef(0);
     const currentAngle = useRef(0);
     const isInitialized = useRef(false);
+    const isAnimating = useRef(false);
 
     // Camera distance and height
-    const distance = 10;
-    const height = 8;
+    const distance = 7;
+    const height = 10;
+
+    // Threshold for considering animation complete
+    const ANIMATION_THRESHOLD = 0.01;
 
     // Get target angle based on turn (in radians)
     const getTargetAngle = (turn: number): number => {
-        // White = 0° (from -Z looking toward +Z, white pieces in front)
-        // Black = 180° (PI radians, from +Z looking toward -Z, black pieces in front)
         return turn === 0 ? 0 : Math.PI;
     };
+
+    const setAnimating = useCallback((value: boolean) => {
+        if (isAnimating.current !== value) {
+            isAnimating.current = value;
+            onAnimatingChange?.(value);
+        }
+    }, [onAnimatingChange]);
 
     useEffect(() => {
         if (!enabled) return;
@@ -43,23 +57,36 @@ export const TurnBasedCamera = ({ currentTurn, enabled = true }: TurnBasedCamera
             camera.position.set(x, height, z);
             camera.lookAt(0, 0, 0);
             isInitialized.current = true;
+        } else {
+            // Start animating on turn change
+            setAnimating(true);
         }
-    }, [currentTurn, enabled, camera]);
+    }, [currentTurn, enabled, camera, setAnimating]);
 
     useFrame(() => {
         if (!enabled) return;
 
-        // Smoothly interpolate angle (lateral rotation)
-        const lerpFactor = 0.04;
-
-        // Calculate shortest path rotation
+        // Calculate angle difference
         let angleDiff = targetAngle.current - currentAngle.current;
 
-        // Normalize angle difference to [-PI, PI] for shortest path
+        // Normalize to shortest path
         while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
         while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
 
-        // Apply smooth rotation
+        // Check if we're close enough to stop
+        if (Math.abs(angleDiff) < ANIMATION_THRESHOLD) {
+            currentAngle.current = targetAngle.current;
+            setAnimating(false);
+
+            // If freeCam is on and not animating, don't override camera
+            if (freeCam) return;
+        } else {
+            // Still animating - take control of camera
+            setAnimating(true);
+        }
+
+        // Smoothly interpolate angle
+        const lerpFactor = 0.05; // Slightly faster for better feel
         currentAngle.current += angleDiff * lerpFactor;
 
         // Convert polar to cartesian

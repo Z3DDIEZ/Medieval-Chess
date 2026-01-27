@@ -117,6 +117,14 @@ Open the URL shown (e.g., `http://localhost:5173`). The game will automatically 
 - [x] Fixed Layout Issues (No unwanted scrolling/gestures)
 - [x] Unit Tests for Special Moves (Castling, En Passant, Fool's Mate)
 
+### Phase 11: 3D Camera & Board Controls ✅
+- [x] Turn-Based Camera Rotation (Smooth lateral rotation on turn change)
+- [x] Auto-Rotate Toggle (Enable/disable automatic camera rotation)
+- [x] Free Camera Mode (Manual orbit controls in 3D mode)
+- [x] Board Flip Toggle (Switch between White/Black perspective in 2D mode)
+- [x] Coordinate Labels (File a-h, Rank 1-8 on board edges)
+- [x] Mode-Specific Controls (3D: camera toggles, 2D: flip toggle)
+
 ---
 
 ## 📦 API Endpoints

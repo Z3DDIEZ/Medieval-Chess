@@ -7,9 +7,13 @@ interface SidebarProps {
     onToggleView: () => void;
     autoRotateCamera?: boolean;
     onToggleAutoRotate?: () => void;
+    freeCam?: boolean;
+    onToggleFreeCam?: () => void;
+    boardFlipped?: boolean;
+    onToggleBoardFlip?: () => void;
 }
 
-export const Sidebar = ({ viewMode, onToggleView, autoRotateCamera, onToggleAutoRotate }: SidebarProps) => {
+export const Sidebar = ({ viewMode, onToggleView, autoRotateCamera, onToggleAutoRotate, freeCam, onToggleFreeCam, boardFlipped, onToggleBoardFlip }: SidebarProps) => {
     const { game, loading, error, resignGame, offerDraw } = useGameStore();
 
     if (loading) return <div className="game-sidebar">Loading Realm...</div>;
@@ -161,19 +165,57 @@ export const Sidebar = ({ viewMode, onToggleView, autoRotateCamera, onToggleAuto
             </div>
 
             <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {/* Camera rotation toggle - only show in 3D mode */}
-                {viewMode === '3d' && onToggleAutoRotate && (
+                {/* Camera toggles - only show in 3D mode */}
+                {viewMode === '3d' && (
+                    <div style={{ display: 'flex', gap: '5px' }}>
+                        {onToggleAutoRotate && (
+                            <button
+                                className="btn-medieval"
+                                onClick={onToggleAutoRotate}
+                                style={{
+                                    flex: 1,
+                                    fontSize: '0.75em',
+                                    padding: '6px',
+                                    background: autoRotateCamera
+                                        ? 'linear-gradient(180deg, #2c5c2c 0%, #1b3e1b 100%)'
+                                        : 'linear-gradient(180deg, #4a3c31 0%, #2c2418 100%)'
+                                }}
+                            >
+                                🔄 Auto: {autoRotateCamera ? 'ON' : 'OFF'}
+                            </button>
+                        )}
+                        {onToggleFreeCam && (
+                            <button
+                                className="btn-medieval"
+                                onClick={onToggleFreeCam}
+                                style={{
+                                    flex: 1,
+                                    fontSize: '0.75em',
+                                    padding: '6px',
+                                    background: freeCam
+                                        ? 'linear-gradient(180deg, #5c5c2c 0%, #3e3e1b 100%)'
+                                        : 'linear-gradient(180deg, #4a3c31 0%, #2c2418 100%)'
+                                }}
+                            >
+                                🎮 Free: {freeCam ? 'ON' : 'OFF'}
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {/* Board Flip Toggle - only show in 2D mode */}
+                {viewMode === '2d' && onToggleBoardFlip && (
                     <button
                         className="btn-medieval"
-                        onClick={onToggleAutoRotate}
+                        onClick={onToggleBoardFlip}
                         style={{
                             fontSize: '0.85em',
-                            background: autoRotateCamera
-                                ? 'linear-gradient(180deg, #2c5c2c 0%, #1b3e1b 100%)'
+                            background: boardFlipped
+                                ? 'linear-gradient(180deg, #5c2c5c 0%, #3e1b3e 100%)'
                                 : 'linear-gradient(180deg, #4a3c31 0%, #2c2418 100%)'
                         }}
                     >
-                        🎥 Auto-Rotate: {autoRotateCamera ? 'ON' : 'OFF'}
+                        🔄 Flip Board: {boardFlipped ? 'Black' : 'White'}
                     </button>
                 )}
 

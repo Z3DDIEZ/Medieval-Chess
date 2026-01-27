@@ -190,17 +190,18 @@ public class SpecialMovesTests
     [Fact]
     public void IsStalemate_DetectedWhenNoLegalMoves()
     {
-        // Simplified stalemate position: Black king alone, no legal moves, not in check
+        // Classic stalemate position: Black king in corner, White queen cuts off escape, not in check
+        // Position: Black king on h8, White queen on f7 (covers g8,g7,h7), White king on g6 (covers g7,h7)
         var board = new Board();
-        board.AddPiece(new King(PlayerColor.Black, new Position(0, 7))); // a8
-        board.AddPiece(new King(PlayerColor.White, new Position(1, 5))); // b6 - blocks escape
-        board.AddPiece(new Queen(PlayerColor.White, new Position(1, 6))); // b7 - traps king
+        board.AddPiece(new King(PlayerColor.Black, new Position(7, 7))); // h8
+        board.AddPiece(new King(PlayerColor.White, new Position(6, 5))); // g6 - blocks g7, h7
+        board.AddPiece(new Queen(PlayerColor.White, new Position(5, 6))); // f7 - covers g8, g7, h7, but NOT h8
         
         // Act
         var isStalemate = _engine.IsStalemate(board, PlayerColor.Black);
         var isCheck = _engine.IsKingInCheck(board, PlayerColor.Black);
         
-        // Assert
+        // Assert: King is NOT in check but has no legal moves
         Assert.False(isCheck);
         Assert.True(isStalemate);
     }

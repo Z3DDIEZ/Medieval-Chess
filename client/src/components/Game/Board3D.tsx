@@ -274,6 +274,40 @@ export const Board3D = ({ onPieceSelect }: Board3DProps) => {
                     />
                 </Html>
             )}
+
+            {/* File labels (a-h) along the near edge (white's side) */}
+            {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((file, i) => (
+                <Html key={`file-${file}`} position={[i - 3.5, 0.15, -4.5]} center style={{ pointerEvents: 'none' }}>
+                    <span style={{
+                        color: '#c9a227',
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        fontFamily: 'serif',
+                        textShadow: '1px 1px 2px black',
+                        userSelect: 'none',
+                        pointerEvents: 'none'
+                    }}>
+                        {file}
+                    </span>
+                </Html>
+            ))}
+
+            {/* Rank labels (1-8) along the left edge */}
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((rank) => (
+                <Html key={`rank-${rank}`} position={[-4.5, 0.15, rank - 4.5]} center style={{ pointerEvents: 'none' }}>
+                    <span style={{
+                        color: '#c9a227',
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        fontFamily: 'serif',
+                        textShadow: '1px 1px 2px black',
+                        userSelect: 'none',
+                        pointerEvents: 'none'
+                    }}>
+                        {rank}
+                    </span>
+                </Html>
+            ))}
         </>
     );
 };

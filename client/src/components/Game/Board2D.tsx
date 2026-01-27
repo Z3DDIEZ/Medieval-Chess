@@ -10,10 +10,14 @@ const ItemTypes = {
     PIECE: 'piece'
 };
 
-const BoardSquare = ({ x, y, children, onMove, selectedPos, handleSquareClick, isCheck, isLastMove, isLegalMove }: any) => {
+const BoardSquare = ({ x, y, children, onMove, selectedPos, handleSquareClick, isCheck, isLastMove, isLegalMove, flipped }: any) => {
     const alg = `${String.fromCharCode(97 + x)}${y + 1}`;
     const isDark = (x + y) % 2 === 0;
     const isSelected = selectedPos === alg;
+
+    // Visual position - flip if needed
+    const visualX = flipped ? 7 - x : x;
+    const visualY = flipped ? 7 - y : y;
 
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
         accept: ItemTypes.PIECE,
@@ -34,6 +38,11 @@ const BoardSquare = ({ x, y, children, onMove, selectedPos, handleSquareClick, i
         bgColor = 'rgba(255, 255, 0, 0.3)'; // Yellow for last move
     }
 
+    // Show file labels on rank 1 (or 8 if flipped)
+    const showFileLabel = flipped ? y === 7 : y === 0;
+    // Show rank labels on file a (or h if flipped)
+    const showRankLabel = flipped ? x === 7 : x === 0;
+
     return (
         <div
             ref={(node: any) => { drop(node); }}
@@ -43,8 +52,8 @@ const BoardSquare = ({ x, y, children, onMove, selectedPos, handleSquareClick, i
                 position: 'absolute',
                 width: '12.5%',
                 height: '12.5%',
-                left: `${x * 12.5}%`,
-                top: `${(7 - y) * 12.5}%`,
+                left: `${visualX * 12.5}%`,
+                top: `${(7 - visualY) * 12.5}%`,
                 backgroundColor: bgColor
             }}
         >
@@ -79,26 +88,33 @@ const BoardSquare = ({ x, y, children, onMove, selectedPos, handleSquareClick, i
                 }} />
             )}
 
-            {/* Rank Number (Left side only) */}
-            {x === 0 && (
+            {/* Rank Number (Left side, or right if flipped) */}
+            {showRankLabel && (
                 <span className={`coord rank`} style={{
                     position: 'absolute',
-                    left: '2px',
+                    left: flipped ? undefined : '2px',
+                    right: flipped ? '2px' : undefined,
                     top: '2px',
                     fontSize: '0.7rem',
                     fontWeight: 'bold',
-                    color: isDark ? '#d4a373' : '#b58863' // Contrast
+                    color: isDark ? '#d4a373' : '#b58863',
+                    userSelect: 'none',
+                    pointerEvents: 'none'
                 }}>{y + 1}</span>
             )}
-            {/* File Letter (Bottom side only) */}
-            {y === 0 && (
+            {/* File Letter (Bottom side, or top if flipped) */}
+            {showFileLabel && (
                 <span className={`coord file`} style={{
                     position: 'absolute',
-                    right: '2px',
-                    bottom: '2px',
+                    right: flipped ? undefined : '2px',
+                    left: flipped ? '2px' : undefined,
+                    bottom: flipped ? undefined : '2px',
+                    top: flipped ? '2px' : undefined,
                     fontSize: '0.7rem',
                     fontWeight: 'bold',
-                    color: isDark ? '#d4a373' : '#b58863' // Contrast
+                    color: isDark ? '#d4a373' : '#b58863',
+                    userSelect: 'none',
+                    pointerEvents: 'none'
                 }}>{String.fromCharCode(97 + x)}</span>
             )}
         </div>
@@ -166,6 +182,7 @@ const DraggablePiece = ({ piece, onSelect }: any) => {
 
 interface Board2DProps {
     onPieceSelect?: (position: string | null) => void;
+    flipped?: boolean;
 }
 
 interface PendingPromotion {
@@ -174,7 +191,7 @@ interface PendingPromotion {
     color: number;
 }
 
-export const Board2D = ({ onPieceSelect }: Board2DProps) => {
+export const Board2D = ({ onPieceSelect, flipped = false }: Board2DProps) => {
     const { game, executeMove, legalMoves, getLegalMoves, clearLegalMoves } = useGameStore();
     const [selectedPos, setSelectedPos] = useState<string | null>(null);
     const [pendingPromotion, setPendingPromotion] = useState<PendingPromotion | null>(null);
@@ -289,6 +306,7 @@ export const Board2D = ({ onPieceSelect }: Board2DProps) => {
                     key={alg}
                     x={file}
                     y={rank}
+                    flipped={flipped}
                     onMove={handleMove}
                     selectedPos={selectedPos}
                     handleSquareClick={handleSquareClick}
