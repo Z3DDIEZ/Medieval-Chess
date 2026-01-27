@@ -2,7 +2,7 @@
 AG-docs/
 
 #online docs
-docs/online-docs/
+docs/online-resources/
 
 # IDE
 .vscode/
@@ -17,3 +17,4 @@ obj/
 node_modules/
 dist/
 build/
+
