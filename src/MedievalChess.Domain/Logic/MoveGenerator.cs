@@ -8,14 +8,19 @@ public class MoveGenerator
 {
     public IEnumerable<Move> GetLegalMoves(Board board, PlayerColor turn)
     {
-        var activePieces = board.GetActivePieces(turn);
+        // Materialize to List to avoid lazy evaluation issues during iteration
+        var activePieces = board.GetActivePieces(turn).ToList();
         var legalMoves = new List<Move>();
 
         foreach (var piece in activePieces)
         {
             if (piece.Position == null) continue;
 
-            var pseudoMoves = piece.GetPseudoLegalMoves(piece.Position.Value, board);
+            // CRITICAL: Materialize to List - GetPseudoLegalMoves uses yield return (lazy).
+            // IsLegal() temporarily modifies piece.Position during simulation,
+            // which would corrupt the lazy iterator's state.
+            var pseudoMoves = piece.GetPseudoLegalMoves(piece.Position.Value, board).ToList();
+            
             foreach (var target in pseudoMoves)
             {
                 if (IsLegal(board, piece, target))
@@ -30,21 +35,32 @@ public class MoveGenerator
 
     public bool IsLegal(Board board, Piece piece, Position to)
     {
-        // Simulate move
-        var from = piece.Position!.Value;
+        if (piece.Position == null) return false;
+        
+        var from = piece.Position.Value;
+        
+        // 1. Check pseudo-legality first - the piece must be able to make this move
+        var pseudoMoves = piece.GetPseudoLegalMoves(from, board);
+        if (!pseudoMoves.Contains(to)) return false;
+        
+        // 2. Simulate move with guaranteed state restoration
         var targetPiece = board.GetPieceAt(to);
         
-        // Apply
-        piece.Position = to;
-        if (targetPiece != null) targetPiece.Position = null;
+        try
+        {
+            // Apply simulation
+            piece.Position = to;
+            if (targetPiece != null) targetPiece.Position = null;
 
-        var kingInCheck = IsKingInCheck(board, piece.Color);
-
-        // Revert
-        piece.Position = from;
-        if (targetPiece != null) targetPiece.Position = to; // Restore captured piece position
-
-        return !kingInCheck;
+            // Check if this leaves king in check
+            return !IsKingInCheck(board, piece.Color);
+        }
+        finally
+        {
+            // Guaranteed revert - always restore state
+            piece.Position = from;
+            if (targetPiece != null) targetPiece.Position = to;
+        }
     }
 
     public bool IsKingInCheck(Board board, PlayerColor color)

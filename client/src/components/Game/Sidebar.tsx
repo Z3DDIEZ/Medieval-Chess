@@ -68,6 +68,23 @@ export const Sidebar = ({ viewMode, onToggleView }: SidebarProps) => {
         );
     };
 
+    // Game Status Mapping (matches GameStatus enum in backend)
+    const getStatusText = (status: number): string => {
+        switch (status) {
+            case 0: return 'Not Started';
+            case 1: return 'In Progress';
+            case 2: return '🏆 Checkmate!';
+            case 3: return '🤝 Stalemate';
+            case 4: return '🤝 Draw';
+            case 5: return '🏳️ Forfeit';
+            case 6: return '🏳️ Resignation';
+            default: return 'Unknown';
+        }
+    };
+
+    const isGameOver = game.status >= 2; // Checkmate and above are game-ending states
+    const statusText = getStatusText(game.status);
+
     return (
         <aside className="game-sidebar">
             <header className="sidebar-header">
@@ -92,13 +109,13 @@ export const Sidebar = ({ viewMode, onToggleView }: SidebarProps) => {
                         border: '1px solid #666'
                     }} />
                     <span style={{ fontWeight: 'bold', fontSize: '1.1em' }}>
-                        {isWhiteTurn ? "White's Turn" : "Black's Turn"}
+                        {isGameOver ? statusText : (isWhiteTurn ? "White's Turn" : "Black's Turn")}
                     </span>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9em' }}>
                     <span>Turn #{game.turnNumber}</span>
-                    <span style={{ color: '#e6c68b' }}>{game.status}</span>
+                    <span style={{ color: isGameOver ? '#ff6b6b' : '#e6c68b' }}>{statusText}</span>
                 </div>
 
                 {/* Captured Pieces Display */}
