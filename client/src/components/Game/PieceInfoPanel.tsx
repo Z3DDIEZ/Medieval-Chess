@@ -43,7 +43,37 @@ const PIECE_DESCRIPTIONS: { [key: number]: string } = {
 };
 
 export const PieceInfoPanel = ({ piece, onClose }: PieceInfoPanelProps) => {
-    if (!piece) return null;
+    // Show empty state when no piece selected
+    if (!piece) {
+        return (
+            <div className="piece-info-panel">
+                <div className="piece-info-header">
+                    <div className="piece-info-icon" style={{ opacity: 0.3 }}>
+                        <div style={{ width: '100%', height: '100%', background: '#333', borderRadius: '8px' }} />
+                    </div>
+                    <div className="piece-info-title">
+                        <h3 style={{ color: '#666' }}>No Piece Selected</h3>
+                        <span className="piece-position" style={{ color: '#555' }}>--</span>
+                    </div>
+                </div>
+
+                <div className="piece-info-body">
+                    <div style={{
+                        color: '#666',
+                        textAlign: 'center',
+                        padding: '30px 20px',
+                        fontSize: '0.9em',
+                        lineHeight: '1.5'
+                    }}>
+                        <p>Click on a piece to view its details.</p>
+                        <p style={{ marginTop: '10px', fontSize: '0.85em', color: '#555' }}>
+                            You can see HP, Loyalty, and abilities here.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     const PieceIcon = getPieceComponent(piece.type, piece.color);
     const pieceName = PIECE_NAMES[piece.type] || 'Unknown';

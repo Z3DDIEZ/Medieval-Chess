@@ -5,9 +5,11 @@ import './BoardTheme.css';
 interface SidebarProps {
     viewMode: '3d' | '2d';
     onToggleView: () => void;
+    autoRotateCamera?: boolean;
+    onToggleAutoRotate?: () => void;
 }
 
-export const Sidebar = ({ viewMode, onToggleView }: SidebarProps) => {
+export const Sidebar = ({ viewMode, onToggleView, autoRotateCamera, onToggleAutoRotate }: SidebarProps) => {
     const { game, loading, error, resignGame, offerDraw } = useGameStore();
 
     if (loading) return <div className="game-sidebar">Loading Realm...</div>;
@@ -159,6 +161,22 @@ export const Sidebar = ({ viewMode, onToggleView }: SidebarProps) => {
             </div>
 
             <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {/* Camera rotation toggle - only show in 3D mode */}
+                {viewMode === '3d' && onToggleAutoRotate && (
+                    <button
+                        className="btn-medieval"
+                        onClick={onToggleAutoRotate}
+                        style={{
+                            fontSize: '0.85em',
+                            background: autoRotateCamera
+                                ? 'linear-gradient(180deg, #2c5c2c 0%, #1b3e1b 100%)'
+                                : 'linear-gradient(180deg, #4a3c31 0%, #2c2418 100%)'
+                        }}
+                    >
+                        🎥 Auto-Rotate: {autoRotateCamera ? 'ON' : 'OFF'}
+                    </button>
+                )}
+
                 <button className="btn-medieval" onClick={onToggleView}>
                     Switch to {viewMode === '3d' ? '2D Map' : '3D View'}
                 </button>

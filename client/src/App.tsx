@@ -5,6 +5,7 @@ import { Board3D } from './components/Game/Board3D';
 import { Board2D } from './components/Game/Board2D';
 import { Sidebar } from './components/Game/Sidebar';
 import { PieceInfoPanel } from './components/Game/PieceInfoPanel';
+import { TurnBasedCamera } from './components/Game/TurnBasedCamera';
 import { useGameStore } from './store/useGameStore';
 import './App.css';
 
@@ -21,6 +22,7 @@ function App() {
   const { fetchGame, createGame, connectHub, game } = useGameStore();
   const [viewMode, setViewMode] = useState<'3d' | '2d'>('3d');
   const [selectedPiecePos, setSelectedPiecePos] = useState<string | null>(null);
+  const [autoRotateCamera, setAutoRotateCamera] = useState(true); // Enable by default for dev
 
   useEffect(() => {
     const initGame = async () => {
@@ -40,16 +42,35 @@ function App() {
     ? game.pieces.find(p => p.position === selectedPiecePos) || null
     : null;
 
+  // Current turn for camera rotation (default to White if no game)
+  const currentTurn = game?.currentTurn ?? 0;
+
   return (
     <div style={{ width: '100vw', height: '100vh', background: '#111', display: 'flex' }}>
 
-      <Sidebar viewMode={viewMode} onToggleView={() => setViewMode(v => v === '3d' ? '2d' : '3d')} />
+      <Sidebar
+        viewMode={viewMode}
+        onToggleView={() => setViewMode(v => v === '3d' ? '2d' : '3d')}
+        autoRotateCamera={autoRotateCamera}
+        onToggleAutoRotate={() => setAutoRotateCamera(v => !v)}
+      />
 
       {/* Main Viewport */}
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden', backgroundColor: '#1e1e1e' }}>
         {viewMode === '3d' ? (
-          <Canvas shadows camera={{ position: [0, 10, 5], fov: 50 }}>
-            <OrbitControls minPolarAngle={0} maxPolarAngle={Math.PI / 2.2} />
+          <Canvas shadows camera={{ position: [0, 8, 6], fov: 50 }}>
+            {/* Turn-based camera controller */}
+            <TurnBasedCamera currentTurn={currentTurn} enabled={autoRotateCamera} />
+
+            {/* Allow manual orbit when auto-rotate is off */}
+            <OrbitControls
+              enablePan={false}
+              minPolarAngle={0.3}
+              maxPolarAngle={Math.PI / 2.2}
+              minDistance={5}
+              maxDistance={15}
+            />
+
             <ambientLight intensity={0.5} />
             <spotLight position={[10, 15, 10]} angle={0.3} penumbra={1} castShadow intensity={100} />
             <pointLight position={[-10, -10, -10]} intensity={0.5} />
@@ -57,7 +78,7 @@ function App() {
             <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
             <Environment preset="night" />
 
-            <Board3D />
+            <Board3D onPieceSelect={setSelectedPiecePos} />
           </Canvas>
         ) : (
           <div style={{
@@ -75,13 +96,11 @@ function App() {
         )}
       </div>
 
-      {/* Piece Info Panel (Right Side) */}
-      {selectedPiece && (
-        <PieceInfoPanel
-          piece={selectedPiece}
-          onClose={() => setSelectedPiecePos(null)}
-        />
-      )}
+      {/* Piece Info Panel (Right Side - Always Visible) */}
+      <PieceInfoPanel
+        piece={selectedPiece}
+        onClose={() => setSelectedPiecePos(null)}
+      />
     </div>
   );
 }
