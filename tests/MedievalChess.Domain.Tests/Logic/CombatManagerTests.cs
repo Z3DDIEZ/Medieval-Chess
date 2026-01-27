@@ -37,32 +37,23 @@ public class CombatManagerTests
     [Fact]
     public void CalculateCombat_DamageScalesWithLevel()
     {
-        // Arrange
-        var attackerLevel1 = new Rook(PlayerColor.White, new Position(0, 0));
-        var attackerLevel10 = new Rook(PlayerColor.White, new Position(0, 1));
-        // Mock leveling up (since we can't set Level directly easily, assume default is 1)
-        // We'll gain XP to level up attackerLevel10 9 times
-        for(int i=1; i<10; i++)
-        {
-            attackerLevel10.GainXP(i * 100); 
-        }
-
-        var defender = new Pawn(PlayerColor.Black, new Position(1, 1));
-
         // Act & Assert
         // Due to Critical Hits (1.5x) and high variance, a lucky Level 1 can out-damage an unlucky Level 10.
         // We run multiple iterations to verify the trend (Average Damage should definitely be higher).
 
         double totalDmg1 = 0;
         double totalDmg10 = 0;
-        int iterations = 50;
+        int iterations = 100;
 
         for (int i = 0; i < iterations; i++)
         {
             // Re-instantiate to get new IDs -> new Seeds -> new RNG
             var a1 = new Rook(PlayerColor.White, new Position(0, 0));
             var a10 = new Rook(PlayerColor.White, new Position(0, 1));
-             for(int j=1; j<10; j++) a10.GainXP(j * 100);
+            
+            // Manual Level Up since GainXP doesn't trigger LevelUp() automatically in our domain model 
+            // without the XPManager logic, which we want to bypass for direct testing here.
+            for(int j=1; j<10; j++) a10.Test_LevelUp();
 
             var d = new Pawn(PlayerColor.Black, new Position(1, 1));
 

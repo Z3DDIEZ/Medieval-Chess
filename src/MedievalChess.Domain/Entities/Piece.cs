@@ -98,6 +98,11 @@ public abstract class Piece : AggregateRoot<Guid>
     }
 
     /// <summary>
+    /// Internal helper for testing to bypass XP requirements
+    /// </summary>
+    internal void Test_LevelUp() => LevelUp();
+
+    /// <summary>
     /// Returns moves that are valid according to the piece's geometric rules, 
     /// ignoring check/pin constraints.
     /// </summary>
