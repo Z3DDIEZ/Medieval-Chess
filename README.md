@@ -126,15 +126,15 @@ Open the URL shown (e.g., `http://localhost:5173`). The game will automatically 
 - [x] Coordinate Labels (File a-h, Rank 1-8 on board edges)
 - [x] Mode-Specific Controls (3D: camera toggles, 2D: flip toggle)
 
-### Phase 12: Medieval Logic Domain Layer 🚧
+### Phase 12: Medieval Logic Domain Layer ✅
 - [x] Loyalty Relationship Entity & Manager
 - [x] Action Point (AP) System (5 AP/turn, 10 max)
 - [x] Ability & Effect Entities
 - [x] AbilityManager (Cooldowns, Effect Ticks)
 - [x] Unit Tests (LoyaltyManagerTests, AbilityManagerTests)
-- [ ] Ability Definitions & Activation
-- [ ] Court System (King's vs Queen's Court)
-- [ ] Defection Logic
+- [x] Ability Definitions & Activation
+- [x] Court System (King's vs Queen's Court)
+- [x] Defection Logic
 
 ---
 

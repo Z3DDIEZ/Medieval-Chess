@@ -53,6 +53,16 @@ public abstract class Piece : AggregateRoot<Guid>
         }
     }
 
+    public void Heal(int amount)
+    {
+        CurrentHP = Math.Min(MaxHP, CurrentHP + amount);
+    }
+
+    /// <summary>
+    /// A piece is defecting if loyalty falls to 0-29 range.
+    /// </summary>
+    public bool IsDefecting => Loyalty.Value < 30;
+
     /// <summary>
     /// Standard chess capture (no damage - instant removal)
     /// </summary>

@@ -209,7 +209,13 @@ public class Game : AggregateRoot<Guid>
         var loyaltyManager = new Logic.LoyaltyManager(this);
         loyaltyManager.UpdateLoyalty();
         
-        // 2. Ability/Effect Updates
+        // 2. Court Bonuses
+        loyaltyManager.ApplyCourtBonuses();
+        
+        // 3. Process Defections
+        loyaltyManager.ProcessDefections();
+        
+        // 4. Ability/Effect Updates
         var abilityManager = new Logic.AbilityManager(this);
         abilityManager.AdvanceCooldowns();
         abilityManager.TickEffects();

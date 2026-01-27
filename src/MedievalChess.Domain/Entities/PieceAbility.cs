@@ -40,6 +40,11 @@ public class PieceAbility : Entity<Guid>
     {
         CurrentCooldown = Math.Max(0, CurrentCooldown - amount);
     }
+
+    public void ResetCooldown()
+    {
+        CurrentCooldown = 0;
+    }
     
     public bool IsReady => CurrentCooldown <= 0;
 }
