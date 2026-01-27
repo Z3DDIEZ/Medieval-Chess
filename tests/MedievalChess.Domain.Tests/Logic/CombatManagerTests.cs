@@ -49,23 +49,32 @@ public class CombatManagerTests
 
         var defender = new Pawn(PlayerColor.Black, new Position(1, 1));
 
-        // Act
-        // Use same seeded RNG context if possible, but IDs differ.
-        // We test general magnitude.
-        // Base Rook Damage = 10.
-        // Level 1 (x1.1) = ~11.
-        // Level 10 (x2.0) = ~20.
-        
-        var result1 = _combatManager.CalculateCombat(attackerLevel1, defender);
-        var result10 = _combatManager.CalculateCombat(attackerLevel10, defender);
+        // Act & Assert
+        // Due to Critical Hits (1.5x) and high variance, a lucky Level 1 can out-damage an unlucky Level 10.
+        // We run multiple iterations to verify the trend (Average Damage should definitely be higher).
 
-        // Assert
-        // Given variances (0.8-1.2) and Armor (2 * 0.5-1.0 = 1-2 reduction)
-        // Level 1: 10 * 1.1 * 0.8 - 2 = ~6.8. Max: 10 * 1.1 * 1.2 - 1 = ~12.2.
-        // Level 10: 10 * 2.0 * 0.8 - 2 = ~14. Max: 10 * 2.0 * 1.2 - 1 = ~23.
-        
-        Assert.True(result10.DamageDealt > result1.DamageDealt, 
-            $"Level 10 damage ({result10.DamageDealt}) should generally be higher than Level 1 ({result1.DamageDealt})");
+        double totalDmg1 = 0;
+        double totalDmg10 = 0;
+        int iterations = 50;
+
+        for (int i = 0; i < iterations; i++)
+        {
+            // Re-instantiate to get new IDs -> new Seeds -> new RNG
+            var a1 = new Rook(PlayerColor.White, new Position(0, 0));
+            var a10 = new Rook(PlayerColor.White, new Position(0, 1));
+             for(int j=1; j<10; j++) a10.GainXP(j * 100);
+
+            var d = new Pawn(PlayerColor.Black, new Position(1, 1));
+
+            totalDmg1 += _combatManager.CalculateCombat(a1, d).DamageDealt;
+            totalDmg10 += _combatManager.CalculateCombat(a10, d).DamageDealt;
+        }
+
+        double avg1 = totalDmg1 / iterations;
+        double avg10 = totalDmg10 / iterations;
+
+        Assert.True(avg10 > avg1, 
+            $"Level 10 avg damage ({avg10}) should be higher than Level 1 ({avg1}) over {iterations} runs.");
     }
 
     [Fact]
