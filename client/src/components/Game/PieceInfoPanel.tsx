@@ -27,6 +27,7 @@ interface Piece {
 interface PieceInfoPanelProps {
     piece: Piece | null;
     onClose: () => void;
+    embedded?: boolean;
 }
 
 const PIECE_NAMES: { [key: number]: string } = {
@@ -56,9 +57,10 @@ const PIECE_DESCRIPTIONS: { [key: number]: string } = {
     5: 'The monarch. Limited to one square in any direction, but the game is lost if captured.'
 };
 
-export const PieceInfoPanel = ({ piece, onClose }: PieceInfoPanelProps) => {
+export const PieceInfoPanel = ({ piece, onClose, embedded }: PieceInfoPanelProps) => {
     // Show empty state when no piece selected
     if (!piece) {
+        if (embedded) return null;
         return (
             <div className="piece-info-panel">
                 <div className="piece-info-header">
@@ -110,44 +112,69 @@ export const PieceInfoPanel = ({ piece, onClose }: PieceInfoPanelProps) => {
     };
     const loyaltyStatus = getLoyaltyStatus(piece.loyalty);
 
+    const containerStyle = embedded ? {
+        width: '100%',
+        minWidth: 'auto',
+        height: '100%',
+        boxShadow: 'none',
+        padding: '0',
+        animation: 'none',
+        borderLeft: 'none'
+    } : undefined;
+
     return (
-        <div className="piece-info-panel">
-            <div className="piece-info-header">
-                <div className="piece-info-icon">
-                    {PieceIcon && <PieceIcon style={{ width: '100%', height: '100%' }} />}
-                </div>
-                <div className="piece-info-title">
-                    <h3>{colorName} {pieceName}</h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span className="piece-position">{piece.position.toUpperCase()}</span>
-                        {piece.promotionTier && (
-                            <span style={{
-                                background: '#e0e0e0',
-                                color: '#333',
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                fontSize: '0.8em',
-                                fontStyle: 'italic'
-                            }}>
-                                {piece.promotionTier}
-                            </span>
-                        )}
-                        {piece.level > 1 && (
-                            <span style={{
-                                background: '#ffd700',
-                                color: '#000',
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                fontSize: '0.8em',
-                                fontWeight: 'bold'
-                            }}>
-                                Lv.{piece.level}
-                            </span>
-                        )}
+        <div className={`piece-info-panel ${embedded ? 'embedded' : ''}`} style={containerStyle}>
+            {embedded ? (
+                <div className="piece-info-header" style={{ borderBottom: '1px solid #4a3c31', marginBottom: '10px', paddingBottom: '10px' }}>
+                    <div className="piece-info-icon" style={{ width: '40px', height: '40px' }}>
+                        {PieceIcon && <PieceIcon style={{ width: '100%', height: '100%' }} />}
+                    </div>
+                    <div className="piece-info-title">
+                        <h3 style={{ fontSize: '1.0rem' }}>{colorName} {pieceName}</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span className="piece-position">{piece.position.toUpperCase()}</span>
+                            {piece.level > 1 && <span style={{ background: '#ffd700', color: '#000', padding: '1px 4px', borderRadius: '3px', fontSize: '0.7em', fontWeight: 'bold' }}>Lv.{piece.level}</span>}
+                        </div>
                     </div>
                 </div>
-                <button className="piece-info-close" onClick={onClose}>×</button>
-            </div>
+            ) : (
+                <div className="piece-info-header">
+                    <div className="piece-info-icon">
+                        {PieceIcon && <PieceIcon style={{ width: '100%', height: '100%' }} />}
+                    </div>
+                    <div className="piece-info-title">
+                        <h3>{colorName} {pieceName}</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span className="piece-position">{piece.position.toUpperCase()}</span>
+                            {piece.promotionTier && (
+                                <span style={{
+                                    background: '#e0e0e0',
+                                    color: '#333',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    fontSize: '0.8em',
+                                    fontStyle: 'italic'
+                                }}>
+                                    {piece.promotionTier}
+                                </span>
+                            )}
+                            {piece.level > 1 && (
+                                <span style={{
+                                    background: '#ffd700',
+                                    color: '#000',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    fontSize: '0.8em',
+                                    fontWeight: 'bold'
+                                }}>
+                                    Lv.{piece.level}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    <button className="piece-info-close" onClick={onClose}>×</button>
+                </div>
+            )}
 
             {/* Defection Warning */}
             {piece.isDefecting && (

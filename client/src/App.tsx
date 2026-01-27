@@ -3,8 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { Board3D } from './components/Game/Board3D';
 import { Board2D } from './components/Game/Board2D';
-import { Sidebar } from './components/Game/Sidebar';
-import { PieceInfoPanel } from './components/Game/PieceInfoPanel';
+import { RightPanel } from './components/Game/RightPanel';
 import { TurnBasedCamera } from './components/Game/TurnBasedCamera';
 import { BattleDialog } from './components/Game/BattleDialog';
 import { SceneLighting, BoardFrame, GroundPlane } from './components/Game/SceneEnvironment';
@@ -49,16 +48,6 @@ function App() {
   return (
     <div style={{ width: '100vw', height: '100vh', background: '#111', display: 'flex' }}>
 
-      <Sidebar
-        viewMode={viewMode}
-        onToggleView={() => setViewMode(v => v === '3d' ? '2d' : '3d')}
-        autoRotateCamera={autoRotateCamera}
-        onToggleAutoRotate={() => setAutoRotateCamera(v => !v)}
-        freeCam={freeCam}
-        onToggleFreeCam={() => setFreeCam(v => !v)}
-        boardFlipped={boardFlipped}
-        onToggleBoardFlip={() => setBoardFlipped(v => !v)}
-      />
 
       {/* Main Viewport */}
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden', backgroundColor: '#000000' }}>
@@ -109,10 +98,17 @@ function App() {
 
       </div>
 
-      {/* Piece Info Panel (Right Side - Always Visible) */}
-      <PieceInfoPanel
-        piece={selectedPiece}
-        onClose={() => setSelectedPiecePos(null)}
+      <RightPanel
+        viewMode={viewMode}
+        onToggleView={() => setViewMode(v => v === '3d' ? '2d' : '3d')}
+        autoRotateCamera={autoRotateCamera}
+        onToggleAutoRotate={() => setAutoRotateCamera(v => !v)}
+        freeCam={freeCam}
+        onToggleFreeCam={() => setFreeCam(v => !v)}
+        boardFlipped={boardFlipped}
+        onToggleBoardFlip={() => setBoardFlipped(v => !v)}
+        selectedPiece={selectedPiece}
+        onClosePieceInfo={() => setSelectedPiecePos(null)}
       />
     </div>
   );
