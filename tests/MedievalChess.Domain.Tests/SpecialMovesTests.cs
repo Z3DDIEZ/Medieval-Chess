@@ -171,17 +171,17 @@ public class SpecialMovesTests
 
     [Fact]
     public void IsCheckmate_FoolsMate_DetectedCorrectly()
-    {
-        // Fool's Mate: 1.f3 e5 2.g4 Qh4#
+    {        // Fool's Mate: 1.f3 e5 2.g4 Qh4#
         var game = Game.StartNew();
+        var rng = new Mocks.TestRNGService();
         
         // 1. f3 e5
-        game.ExecuteMove(Position.FromAlgebraic("f2"), Position.FromAlgebraic("f3"), _engine);
-        game.ExecuteMove(Position.FromAlgebraic("e7"), Position.FromAlgebraic("e5"), _engine);
+        game.ExecuteMove(Position.FromAlgebraic("f2"), Position.FromAlgebraic("f3"), _engine, rng);
+        game.ExecuteMove(Position.FromAlgebraic("e7"), Position.FromAlgebraic("e5"), _engine, rng);
         
         // 2. g4 Qh4#
-        game.ExecuteMove(Position.FromAlgebraic("g2"), Position.FromAlgebraic("g4"), _engine);
-        game.ExecuteMove(Position.FromAlgebraic("d8"), Position.FromAlgebraic("h4"), _engine);
+        game.ExecuteMove(Position.FromAlgebraic("g2"), Position.FromAlgebraic("g4"), _engine, rng);
+        game.ExecuteMove(Position.FromAlgebraic("d8"), Position.FromAlgebraic("h4"), _engine, rng);
         
         // Assert
         Assert.Equal(GameStatus.Checkmate, game.Status);

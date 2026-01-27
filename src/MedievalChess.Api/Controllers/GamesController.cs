@@ -188,7 +188,20 @@ public class GamesController : ControllerBase
                     }).ToList()
                 }),
             // Include move history for the sidebar
-            MoveHistory = game.PlayedMoves.Select(m => m.Notation).ToList()
+            MoveHistory = game.PlayedMoves.Select(m => m.Notation).ToList(),
+            // Include recent narrative entries
+            Narrative = game.GameNarrative?.Entries
+                .OrderByDescending(e => e.TurnNumber) // Latest first
+                .Take(15)
+                .Select(e => (object)new 
+                {
+                    e.Id,
+                    e.TurnNumber,
+                    Speaker = e.Speaker.ToString(),
+                    e.Text,
+                    e.Intensity,
+                    e.Tags
+                }).ToList() ?? new List<object>()
         });
     }
 }

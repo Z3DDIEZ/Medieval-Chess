@@ -626,9 +626,47 @@ The Game is the primary aggregate root, controlling all gameplay state and enfor
 
 ---
 
-## 5. Domain Events
+## 5. GameNarrative Aggregate
 
-Domain events are published after state changes and handled by event handlers to trigger side effects (update loyalty, apply abilities, send notifications).
+**Purpose:**
+- Captures the "story" of the battle in real-time
+- Generates RPG-style dialogs and narrative descriptions based on game events
+- managing the "Battle Narrative" dialog box for players
+
+**Identity:**
+- `Id` (Guid): Primary key
+- `GameId` (Guid): Foreign key to Game
+
+**State:**
+- `Entries` (List<NarrativeEntry>): Chronological log of narrative moments
+- `Tone` (NarrativeTone enum): Grim, Heroic, Chaotic (changes based on game state)
+
+**Entities:**
+
+**5.1 NarrativeEntry**
+- `Id` (Guid)
+- `TurnNumber` (int)
+- `Speaker` (NarratorType enum): WhiteKing, BlackKing, General, System
+- `Text` (string): The displayed dialog/description
+- `Tags` (List<string>): "CriticalHit", "Betrayal", "ClutchSave"
+- `Intensity` (int): 1-10 (affects UI display)
+- `RelatedPieceId` (Guid?): If a specific piece is the subject
+
+**Core Behaviors:**
+
+1. **GenerateEntry(GameEvent) → NarrativeEntry**
+   - Listens to `PieceMoved`, `PieceCaptured`, `AbilityActivated`, `LoyaltyChanged`
+   - Uses templates or simple procedural generation based on events
+   - Example: "The White Knight charges! A critical blow deals 15 damage!"
+   - Example (High Luck): "Fate smiles upon the Black Rook! The attack glances off harmlessly."
+
+2. **DeduceTone(GameState) → void**
+   - High tension (Stress State) -> Shift to Grim tone
+   - Winning (High Advantage) -> Shift to Heroic tone
+
+---
+
+
 
 ### 5.1 GameCreatedEvent
 
@@ -834,4 +872,20 @@ Domain events are published after state changes and handled by event handlers to
 
 ---
 
-### 5.14
+### 5.14 CourtControlChangedEvent
+
+**Properties:**
+- `GameId` (Guid)
+- `TurnNumber` (int)
+- `KingsCourtControl` (CourtControl)
+- `QueensCourtControl` (CourtControl)
+- `KingsCourtContestedTurns` (int)
+- `QueensCourtContestedTurns` (int)
+
+**Handlers:**
+- Update court control display in UI
+- Trigger loyalty adjustments based on court control
+
+## 6. Domain Events
+
+Domain events are published after state changes and handled by event handlers to trigger side effects (update loyalty, apply abilities, send notifications).

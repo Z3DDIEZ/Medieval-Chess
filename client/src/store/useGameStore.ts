@@ -27,6 +27,15 @@ interface Piece {
     abilities: PieceAbility[];
 }
 
+interface NarrativeEntry {
+    id: string;
+    turnNumber: number;
+    speaker: string;
+    text: string;
+    intensity: number;
+    tags: string[];
+}
+
 interface GameState {
     id: string;
     status: number;
@@ -37,6 +46,7 @@ interface GameState {
     blackAP: number; // Added
     pieces: Piece[];
     moveHistory?: string[]; // Algebraic notation moves e.g. ["e4", "e5"]
+    narrative: NarrativeEntry[]; // Added
     isCheck?: boolean;
     kingInCheckPosition?: string;
     lastMoveFrom?: string;

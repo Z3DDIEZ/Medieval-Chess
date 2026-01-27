@@ -6,12 +6,15 @@ import { Board2D } from './components/Game/Board2D';
 import { Sidebar } from './components/Game/Sidebar';
 import { PieceInfoPanel } from './components/Game/PieceInfoPanel';
 import { TurnBasedCamera } from './components/Game/TurnBasedCamera';
+import { BattleDialog } from './components/Game/BattleDialog';
 import { SceneLighting, BoardFrame, GroundPlane } from './components/Game/SceneEnvironment';
 import { useGameStore } from './store/useGameStore';
 import './App.css';
 
 function App() {
   const { fetchGame, createGame, connectHub, game } = useGameStore();
+
+  // ... (existing code for state)
   const [viewMode, setViewMode] = useState<'3d' | '2d'>('3d');
   const [selectedPiecePos, setSelectedPiecePos] = useState<string | null>(null);
   const [autoRotateCamera, setAutoRotateCamera] = useState(true); // Auto-rotate on turn change
@@ -100,6 +103,10 @@ function App() {
             <Board2D onPieceSelect={setSelectedPiecePos} flipped={boardFlipped} />
           </div>
         )}
+
+        {/* Battle Narrative Dialog - Overlay */}
+        <BattleDialog entries={game?.narrative || []} />
+
       </div>
 
       {/* Piece Info Panel (Right Side - Always Visible) */}

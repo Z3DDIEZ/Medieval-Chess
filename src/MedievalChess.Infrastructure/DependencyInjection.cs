@@ -9,6 +9,7 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
         services.AddSingleton<IGameRepository, GameRepository>();
+        services.AddSingleton<MedievalChess.Domain.Common.IRNGService, MedievalChess.Infrastructure.Services.RNGService>();
         return services;
     }
 }

@@ -11,11 +11,13 @@ public class ExecuteMoveCommandHandler : IRequestHandler<ExecuteMoveCommand, boo
 {
     private readonly IGameRepository _repository;
     private readonly Domain.Logic.IEngineService _engine;
+    private readonly Domain.Common.IRNGService _rngService;
 
-    public ExecuteMoveCommandHandler(IGameRepository repository, Domain.Logic.IEngineService engine)
+    public ExecuteMoveCommandHandler(IGameRepository repository, Domain.Logic.IEngineService engine, Domain.Common.IRNGService rngService)
     {
         _repository = repository;
         _engine = engine;
+        _rngService = rngService;
     }
 
     public Task<bool> Handle(ExecuteMoveCommand request, CancellationToken cancellationToken)
@@ -31,7 +33,7 @@ public class ExecuteMoveCommandHandler : IRequestHandler<ExecuteMoveCommand, boo
 
         try 
         {
-            game.ExecuteMove(fromPos, toPos, _engine, request.PromotionPiece);
+            game.ExecuteMove(fromPos, toPos, _engine, _rngService, request.PromotionPiece);
         }
         catch 
         {

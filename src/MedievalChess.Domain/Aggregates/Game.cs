@@ -41,6 +41,8 @@ public class Game : AggregateRoot<Guid>
     private readonly List<LoyaltyRelationship> _loyaltyRelationships = new();
     public IReadOnlyCollection<LoyaltyRelationship> LoyaltyRelationships => _loyaltyRelationships.AsReadOnly();
 
+    public GameNarrative GameNarrative { get; internal set; } = null!;
+
     private Game() 
     {
         Board = null!; // EF Core binding
@@ -48,7 +50,7 @@ public class Game : AggregateRoot<Guid>
 
     public static Game StartNew()
     {
-        return new Game
+        var game = new Game
         {
             Id = Guid.NewGuid(),
             Board = Board.CreateStandardSetup(),
@@ -57,12 +59,14 @@ public class Game : AggregateRoot<Guid>
             CurrentTurn = PlayerColor.White,
             Status = GameStatus.InProgress,
             TurnNumber = 1,
-            WhiteAP = 5, // Start with 5 AP
+            WhiteAP = 5,
             BlackAP = 5
         };
+        game.GameNarrative = new GameNarrative(game.Id);
+        return game;
     }
 
-    public void ExecuteMove(Position from, Position to, Logic.IEngineService engine, PieceType? promotionPiece = null)
+    public void ExecuteMove(Position from, Position to, Logic.IEngineService engine, IRNGService rngService, PieceType? promotionPiece = null)
     {
         if (Status != GameStatus.InProgress)
             throw new InvalidOperationException("Game is not in progress");
@@ -130,6 +134,13 @@ public class Game : AggregateRoot<Guid>
             
             targetPiece.TakeDamage(result.DamageDealt);
             move.DamageDealt = result.DamageDealt;
+
+            // Narrative Generation
+            var narrativeManager = new Logic.NarrativeManager(rngService);
+            // Glancing logic: if armor reduced more than 50% of damage? or loosely based on ratio
+            bool isGlancing = result.ArmorReduced > result.BaseDamage * 0.5; 
+            var entry = narrativeManager.GenerateCombatEntry(this, piece, targetPiece, result.DamageDealt, result.IsCritical, isGlancing);
+            GameNarrative.AddEntry(entry);
             
             if (targetPiece.IsCaptured)
             {
