@@ -32,7 +32,12 @@ public class GamesController : ControllerBase
     {
         try
         {
-            await _mediator.Send(new ExecuteMoveCommand(id, request.From, request.To));
+            // Parse promotion piece if provided (0=Pawn, 1=Knight, 2=Bishop, 3=Rook, 4=Queen)
+            MedievalChess.Domain.Enums.PieceType? promotionPiece = request.PromotionPiece.HasValue 
+                ? (MedievalChess.Domain.Enums.PieceType)request.PromotionPiece.Value 
+                : null;
+            
+            await _mediator.Send(new ExecuteMoveCommand(id, request.From, request.To, promotionPiece));
             
             // Notify clients
             await _hubContext.Clients.Group(id.ToString()).SendAsync("GameStateUpdated", id);
@@ -97,7 +102,26 @@ public class GamesController : ControllerBase
         }
     }
 
-    public record MoveRequest(string From, string To);
+    [HttpGet("{id}/legal-moves/{from}")]
+    public async Task<ActionResult<IEnumerable<string>>> GetLegalMoves(Guid id, string from)
+    {
+        var game = await _mediator.Send(new GetGameQuery(id));
+        if (game == null) return NotFound();
+        
+        try
+        {
+            var fromPos = MedievalChess.Domain.Primitives.Position.FromAlgebraic(from);
+            var engine = new MedievalChess.Domain.Logic.EngineService();
+            var legalMoves = engine.GetLegalDestinations(game.Board, fromPos);
+            return Ok(legalMoves.Select(p => p.ToAlgebraic()));
+        }
+        catch
+        {
+            return Ok(Array.Empty<string>());
+        }
+    }
+
+    public record MoveRequest(string From, string To, int? PromotionPiece = null);
     public record PlayerColorRequest(MedievalChess.Domain.Enums.PlayerColor Color);
 
     [HttpGet("{id}")]
@@ -107,21 +131,42 @@ public class GamesController : ControllerBase
         if (game == null)
             return NotFound();
 
+        // Check if current player is in check
+        var engine = new MedievalChess.Domain.Logic.EngineService();
+        var isCheck = engine.IsKingInCheck(game.Board, game.CurrentTurn);
+        
+        // Get last move for highlighting
+        var lastMove = game.PlayedMoves.LastOrDefault();
+        
+        // Find king position for check indicator
+        var currentKing = game.Board.GetKing(game.CurrentTurn);
+
         return Ok(new
         {
             game.Id,
             game.Status,
             game.CurrentTurn,
             game.TurnNumber,
-            Pieces = game.Board.Pieces.Select(p => new 
-            {
-                p.Type, 
-                p.Color, 
-                Position = p.Position?.ToAlgebraic(),
-                Loyalty = p.Loyalty.Value,
-                p.MaxHP,
-                p.CurrentHP
-            })
+            IsCheck = isCheck,
+            KingInCheckPosition = isCheck && currentKing?.Position != null 
+                ? currentKing.Position.Value.ToAlgebraic() 
+                : null,
+            LastMoveFrom = lastMove?.From.ToAlgebraic(),
+            LastMoveTo = lastMove?.To.ToAlgebraic(),
+            // Only include active pieces (not captured)
+            Pieces = game.Board.Pieces
+                .Where(p => p.Position != null)
+                .Select(p => new 
+                {
+                    p.Type, 
+                    p.Color, 
+                    Position = p.Position?.ToAlgebraic(),
+                    Loyalty = p.Loyalty.Value,
+                    p.MaxHP,
+                    p.CurrentHP
+                }),
+            // Include move history for the sidebar
+            MoveHistory = game.PlayedMoves.Select(m => m.Notation).ToList()
         });
     }
 }

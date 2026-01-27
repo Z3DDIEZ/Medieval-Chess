@@ -17,26 +17,34 @@ interface GameState {
     currentTurn: number;
     turnNumber: number;
     pieces: Piece[];
-    moveHistory?: string[]; // Algebraic notation moves e.g. ["e2e4", "e7e5"]
+    moveHistory?: string[]; // Algebraic notation moves e.g. ["e4", "e5"]
+    isCheck?: boolean;
+    kingInCheckPosition?: string;
+    lastMoveFrom?: string;
+    lastMoveTo?: string;
 }
 
 interface GameStore {
     game: GameState | null;
     loading: boolean;
     error: string | null;
+    legalMoves: string[];
     fetchGame: (id: string) => Promise<void>;
     createGame: () => Promise<string | null>;
-    executeMove: (id: string, from: string, to: string) => Promise<void>;
+    executeMove: (id: string, from: string, to: string, promotionPiece?: number) => Promise<void>;
     connectHub: (gameId: string) => Promise<void>;
     resignGame: (id: string, color: number) => Promise<void>;
     offerDraw: (id: string, color: number) => Promise<void>;
     acceptDraw: (id: string, color: number) => Promise<void>;
+    getLegalMoves: (id: string, from: string) => Promise<void>;
+    clearLegalMoves: () => void;
 }
 
 export const useGameStore = create<GameStore>((set) => ({
     game: null,
     loading: false,
     error: null,
+    legalMoves: [],
     fetchGame: async (id: string) => {
         set({ loading: true, error: null });
         try {
@@ -64,12 +72,12 @@ export const useGameStore = create<GameStore>((set) => ({
             return null;
         }
     },
-    executeMove: async (id: string, from: string, to: string) => {
+    executeMove: async (id: string, from: string, to: string, promotionPiece?: number) => {
         try {
-            await axios.post(`/api/Games/${id}/moves`, { from, to });
+            await axios.post(`/api/Games/${id}/moves`, { from, to, promotionPiece });
             // Refresh state after move - SignalR will handle it for opponent, but we can do optimistic/immediate too
             const response = await axios.get(`/api/Games/${id}`);
-            set({ game: response.data });
+            set({ game: response.data, legalMoves: [] });
         } catch (err: any) {
             console.error(err);
             set({ error: err.response?.data || "Move failed" });
@@ -117,5 +125,17 @@ export const useGameStore = create<GameStore>((set) => ({
         } catch (err: any) {
             console.error(err);
         }
+    },
+    getLegalMoves: async (id: string, from: string) => {
+        try {
+            const response = await axios.get(`/api/Games/${id}/legal-moves/${from}`);
+            set({ legalMoves: response.data || [] });
+        } catch (err: any) {
+            console.error(err);
+            set({ legalMoves: [] });
+        }
+    },
+    clearLegalMoves: () => {
+        set({ legalMoves: [] });
     }
 }));

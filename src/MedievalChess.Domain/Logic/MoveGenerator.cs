@@ -40,17 +40,51 @@ public class MoveGenerator
         var from = piece.Position.Value;
         
         // 1. Check pseudo-legality first - the piece must be able to make this move
-        var pseudoMoves = piece.GetPseudoLegalMoves(from, board);
+        var pseudoMoves = piece.GetPseudoLegalMoves(from, board).ToList();
         if (!pseudoMoves.Contains(to)) return false;
         
-        // 2. Simulate move with guaranteed state restoration
+        // 2. Special castling validation
+        if (piece.Type == PieceType.King && Math.Abs(to.File - from.File) == 2)
+        {
+            // Can't castle out of check
+            if (IsKingInCheck(board, piece.Color)) return false;
+            
+            // Can't castle through check - check intermediate square
+            int direction = to.File > from.File ? 1 : -1;
+            var intermediateSquare = new Position(from.File + direction, from.Rank);
+            
+            // Simulate king on intermediate square
+            var originalPos = piece.Position;
+            try
+            {
+                piece.Position = intermediateSquare;
+                if (IsKingInCheck(board, piece.Color)) return false;
+            }
+            finally
+            {
+                piece.Position = originalPos;
+            }
+        }
+        
+        // 3. Simulate move with guaranteed state restoration
         var targetPiece = board.GetPieceAt(to);
+        
+        // Special handling for en passant
+        Piece? enPassantCapture = null;
+        if (piece.Type == PieceType.Pawn && 
+            from.File != to.File && 
+            targetPiece == null && 
+            board.EnPassantTarget == to)
+        {
+            enPassantCapture = board.GetPieceAt(new Position(to.File, from.Rank));
+        }
         
         try
         {
             // Apply simulation
             piece.Position = to;
             if (targetPiece != null) targetPiece.Position = null;
+            if (enPassantCapture != null) enPassantCapture.Position = null;
 
             // Check if this leaves king in check
             return !IsKingInCheck(board, piece.Color);
@@ -60,6 +94,7 @@ public class MoveGenerator
             // Guaranteed revert - always restore state
             piece.Position = from;
             if (targetPiece != null) targetPiece.Position = to;
+            if (enPassantCapture != null) enPassantCapture.Position = new Position(to.File, from.Rank);
         }
     }
 

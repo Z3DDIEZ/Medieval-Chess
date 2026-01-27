@@ -34,7 +34,7 @@ public class Game : AggregateRoot<Guid>
         };
     }
 
-    public void ExecuteMove(Position from, Position to, Logic.IEngineService engine)
+    public void ExecuteMove(Position from, Position to, Logic.IEngineService engine, PieceType? promotionPiece = null)
     {
         if (Status != GameStatus.InProgress)
             throw new InvalidOperationException("Game is not in progress");
@@ -50,27 +50,112 @@ public class Game : AggregateRoot<Guid>
 
         var targetPiece = Board.GetPieceAt(to);
         
-        // Record Move
+        // Create Move record
         var move = new Move(from, to, piece, targetPiece);
-        move.Notation = $"{piece.Type.ToString()[0]}{to.ToAlgebraic()}"; // Simplified notation (e.g. "Pd4", "Nf3") - TODO: Full algebraic
-        _playedMoves.Add(move);
 
+        // --- Detect Special Moves ---
+        
+        // Castling detection (King moves 2 squares)
+        bool isCastling = piece.Type == PieceType.King && Math.Abs(to.File - from.File) == 2;
+        if (isCastling)
+        {
+            move.IsCastling = true;
+            move.IsKingsideCastle = to.File > from.File;
+            
+            // Move the rook as well
+            int rookFromFile = move.IsKingsideCastle ? 7 : 0;
+            int rookToFile = move.IsKingsideCastle ? 5 : 3;
+            var rookFrom = new Position(rookFromFile, from.Rank);
+            var rookTo = new Position(rookToFile, from.Rank);
+            
+            var rook = Board.GetPieceAt(rookFrom);
+            if (rook != null)
+            {
+                rook.MoveTo(rookTo);
+                rook.MarkAsMoved();
+            }
+        }
+        
+        // En passant detection (Pawn captures diagonally to empty square)
+        bool isEnPassant = piece.Type == PieceType.Pawn && 
+                           from.File != to.File && 
+                           targetPiece == null;
+        if (isEnPassant && Board.EnPassantTarget == to)
+        {
+            move.IsEnPassant = true;
+            
+            // Capture the pawn that made the double move (on same rank as moving pawn, target file)
+            var capturedPawnPos = new Position(to.File, from.Rank);
+            var capturedPawn = Board.GetPieceAt(capturedPawnPos);
+            if (capturedPawn != null)
+            {
+                capturedPawn.Capture();
+                Board.ResetHalfMoveClock();
+            }
+        }
+        
+        // Standard capture
         if (targetPiece != null)
         {
-            // Capture logic (Standard Chess / Medieval Attrition base)
-            // For now, Standard Chess: Capture = Remove (Capture happens if HP hits 0, but standard chess HP is effectively 1 or manual logic)
-            // The existing code had TakeDamage(999).
-            
-            targetPiece.TakeDamage(999); 
-            
-            var loyaltyManager = new Logic.LoyaltyManager(this);
-            loyaltyManager.OnPieceCaptured(targetPiece);
+            targetPiece.Capture(); // Use proper capture instead of TakeDamage(999)
+            Board.ResetHalfMoveClock();
         }
-
-        piece.MoveTo(to);
         
-        var loyaltyUpdate = new Logic.LoyaltyManager(this);
-        loyaltyUpdate.UpdateLoyalty();
+        // Execute the move
+        piece.MoveTo(to);
+        piece.MarkAsMoved();
+        
+        // Pawn promotion
+        if (piece.Type == PieceType.Pawn && Entities.Pieces.Pawn.IsPromotionRank(to.Rank, piece.Color))
+        {
+            // Default to Queen if not specified
+            var promoteToType = promotionPiece ?? PieceType.Queen;
+            move.PromotionPiece = promoteToType;
+            
+            // Actually replace the pawn with the promoted piece
+            piece.Capture(); // Remove the pawn from the board
+            
+            Piece promotedPiece = promoteToType switch
+            {
+                PieceType.Queen => new Entities.Pieces.Queen(piece.Color, to),
+                PieceType.Rook => new Entities.Pieces.Rook(piece.Color, to),
+                PieceType.Bishop => new Entities.Pieces.Bishop(piece.Color, to),
+                PieceType.Knight => new Entities.Pieces.Knight(piece.Color, to),
+                _ => new Entities.Pieces.Queen(piece.Color, to)
+            };
+            promotedPiece.MarkAsMoved();
+            Board.AddPiece(promotedPiece);
+        }
+        
+        // --- Update Board State ---
+        
+        // Update castling rights
+        Board.UpdateCastlingRights(piece, from);
+        
+        // Set en passant target (only if pawn moved 2 squares)
+        if (piece.Type == PieceType.Pawn && Math.Abs(to.Rank - from.Rank) == 2)
+        {
+            int epRank = (from.Rank + to.Rank) / 2;
+            Board.SetEnPassantTarget(new Position(from.File, epRank));
+        }
+        else
+        {
+            Board.SetEnPassantTarget(null);
+        }
+        
+        // Update half-move clock (pawn moves reset it)
+        if (piece.Type == PieceType.Pawn)
+        {
+            Board.ResetHalfMoveClock();
+        }
+        else if (targetPiece == null && !isEnPassant)
+        {
+            Board.IncrementHalfMoveClock();
+        }
+        
+        // Generate proper notation
+        move.Notation = move.ToAlgebraicNotation();
+        _playedMoves.Add(move);
 
         EndTurn(engine);
     }
@@ -83,14 +168,35 @@ public class Game : AggregateRoot<Guid>
             TurnNumber++;
         }
         
-        // Update Game Status (Checkmate/Stalemate)
-        if (engine.IsCheckmate(Board, CurrentTurn))
+        // Set check/checkmate flags on the last move
+        if (_playedMoves.Count > 0)
         {
-            Status = GameStatus.Checkmate;
+            var lastMove = _playedMoves[^1];
+            if (engine.IsKingInCheck(Board, CurrentTurn))
+            {
+                lastMove.IsCheck = true;
+                
+                if (engine.IsCheckmate(Board, CurrentTurn))
+                {
+                    lastMove.IsCheckmate = true;
+                    lastMove.Notation = lastMove.ToAlgebraicNotation(); // Re-generate with checkmate symbol
+                    Status = GameStatus.Checkmate;
+                    return;
+                }
+            }
         }
-        else if (engine.IsStalemate(Board, CurrentTurn))
+        
+        // Check for stalemate
+        if (engine.IsStalemate(Board, CurrentTurn))
         {
             Status = GameStatus.Stalemate;
+            return;
+        }
+        
+        // Check for 50-move rule
+        if (Board.IsFiftyMoveRule)
+        {
+            Status = GameStatus.Draw;
         }
     }
 

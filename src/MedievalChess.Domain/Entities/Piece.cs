@@ -49,6 +49,24 @@ public abstract class Piece : AggregateRoot<Guid>
         }
     }
 
+    /// <summary>
+    /// Standard chess capture (no damage - instant removal)
+    /// </summary>
+    public void Capture()
+    {
+        Position = null;
+    }
+
+    /// <summary>
+    /// Track if piece has moved (for castling rights)
+    /// </summary>
+    public bool HasMoved { get; private set; }
+
+    public void MarkAsMoved()
+    {
+        HasMoved = true;
+    }
+
     public void GainXP(int amount)
     {
         XP += amount;

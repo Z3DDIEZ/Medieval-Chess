@@ -102,3 +102,30 @@ Open the URL shown (e.g., `http://localhost:5173`). The game will automatically 
 - [x] In-Game Toggle (3D Immersive / 2D Tactical)
 - [x] SVG-based 2D Board Implementation
 
+### Phase 9: Standard Chess Engine Refinement ✅
+- [x] Special Moves: Castling (Kingside/Queenside), En Passant, Pawn Promotion
+- [x] Check/Checkmate/Stalemate Detection
+- [x] Fifty-Move Rule Counter
+- [x] Proper Algebraic Notation (PGN-style)
+- [x] Promotion Picker UI (Queen/Rook/Bishop/Knight)
+
+### Phase 10: Frontend Polish ✅
+- [x] Piece Info Panel (HP, Loyalty, Value, Description)
+- [x] Legal Move Highlighting (Dots for empty squares, Rings for captures)
+- [x] Check Indicator (Red highlight on King)
+- [x] Last Move Highlighting (Yellow squares)
+- [x] Fixed Layout Issues (No unwanted scrolling/gestures)
+- [x] Unit Tests for Special Moves (Castling, En Passant, Fool's Mate)
+
+---
+
+## 📦 API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/Games` | Create a new game |
+| GET | `/api/Games/{id}` | Get game state (pieces, moves, check status) |
+| POST | `/api/Games/{id}/moves` | Execute a move (with optional promotion piece) |
+| GET | `/api/Games/{id}/legal-moves/{from}` | Get legal destinations for a piece |
+| POST | `/api/Games/{id}/resign` | Resign the game |
+| POST | `/api/Games/{id}/offer-draw` | Offer a draw |

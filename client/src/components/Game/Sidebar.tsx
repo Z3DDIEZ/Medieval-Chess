@@ -133,11 +133,12 @@ export const Sidebar = ({ viewMode, onToggleView }: SidebarProps) => {
             </div>
 
             <div className="move-history" style={{
-                maxHeight: '150px',
+                maxHeight: '400px',
                 overflowY: 'auto',
                 background: 'rgba(0,0,0,0.2)',
-                padding: '5px',
-                borderRadius: '4px'
+                padding: '8px',
+                borderRadius: '4px',
+                fontSize: '0.9em'
             }}>
                 {(!game.moveHistory || game.moveHistory.length === 0) ? (
                     <div className="history-row">

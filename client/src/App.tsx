@@ -4,12 +4,23 @@ import { OrbitControls, Stars, Environment } from '@react-three/drei';
 import { Board3D } from './components/Game/Board3D';
 import { Board2D } from './components/Game/Board2D';
 import { Sidebar } from './components/Game/Sidebar';
+import { PieceInfoPanel } from './components/Game/PieceInfoPanel';
 import { useGameStore } from './store/useGameStore';
 import './App.css';
 
+interface SelectedPiece {
+  type: number;
+  color: number;
+  position: string;
+  loyalty: number;
+  maxHP: number;
+  currentHP: number;
+}
+
 function App() {
-  const { fetchGame, createGame, connectHub } = useGameStore();
+  const { fetchGame, createGame, connectHub, game } = useGameStore();
   const [viewMode, setViewMode] = useState<'3d' | '2d'>('3d');
+  const [selectedPiecePos, setSelectedPiecePos] = useState<string | null>(null);
 
   useEffect(() => {
     const initGame = async () => {
@@ -23,6 +34,11 @@ function App() {
     };
     initGame();
   }, []);
+
+  // Get the selected piece from game state
+  const selectedPiece: SelectedPiece | null = game && selectedPiecePos
+    ? game.pieces.find(p => p.position === selectedPiecePos) || null
+    : null;
 
   return (
     <div style={{ width: '100vw', height: '100vh', background: '#111', display: 'flex' }}>
@@ -47,16 +63,25 @@ function App() {
           <div style={{
             width: '100%',
             height: '100%',
-            overflow: 'auto',
+            overflow: 'hidden',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            background: 'radial-gradient(circle at center, #2c241b 0%, #15100c 100%)'
+            background: 'radial-gradient(circle at center, #2c241b 0%, #15100c 100%)',
+            touchAction: 'none' // Prevent two-finger gestures/scrolling
           }}>
-            <Board2D />
+            <Board2D onPieceSelect={setSelectedPiecePos} />
           </div>
         )}
       </div>
+
+      {/* Piece Info Panel (Right Side) */}
+      {selectedPiece && (
+        <PieceInfoPanel
+          piece={selectedPiece}
+          onClose={() => setSelectedPiecePos(null)}
+        />
+      )}
     </div>
   );
 }

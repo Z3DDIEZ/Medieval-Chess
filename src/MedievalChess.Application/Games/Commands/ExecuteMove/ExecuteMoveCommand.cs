@@ -1,10 +1,11 @@
 using MediatR;
 using MedievalChess.Application.Common.Interfaces;
+using MedievalChess.Domain.Enums;
 using MedievalChess.Domain.Primitives;
 
 namespace MedievalChess.Application.Games.Commands.ExecuteMove;
 
-public record ExecuteMoveCommand(Guid GameId, string From, string To) : IRequest<bool>;
+public record ExecuteMoveCommand(Guid GameId, string From, string To, PieceType? PromotionPiece = null) : IRequest<bool>;
 
 public class ExecuteMoveCommandHandler : IRequestHandler<ExecuteMoveCommand, bool>
 {
@@ -30,7 +31,7 @@ public class ExecuteMoveCommandHandler : IRequestHandler<ExecuteMoveCommand, boo
 
         try 
         {
-            game.ExecuteMove(fromPos, toPos, _engine);
+            game.ExecuteMove(fromPos, toPos, _engine, request.PromotionPiece);
         }
         catch 
         {
@@ -43,3 +44,4 @@ public class ExecuteMoveCommandHandler : IRequestHandler<ExecuteMoveCommand, boo
         return Task.FromResult(true);
     }
 }
+

@@ -3,13 +3,14 @@ import { useGameStore } from '../../store/useGameStore';
 import { getPieceComponent } from './ChessAssets';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { PromotionPicker } from './PromotionPicker';
 import './BoardTheme.css';
 
 const ItemTypes = {
     PIECE: 'piece'
 };
 
-const BoardSquare = ({ x, y, children, onMove, selectedPos, handleSquareClick }: any) => {
+const BoardSquare = ({ x, y, children, onMove, selectedPos, handleSquareClick, isCheck, isLastMove, isLegalMove }: any) => {
     const alg = `${String.fromCharCode(97 + x)}${y + 1}`;
     const isDark = (x + y) % 2 === 0;
     const isSelected = selectedPos === alg;
@@ -23,6 +24,16 @@ const BoardSquare = ({ x, y, children, onMove, selectedPos, handleSquareClick }:
         }),
     }), [x, y, onMove]);
 
+    // Determine background color with priority
+    let bgColor = undefined;
+    if (isOver) {
+        bgColor = canDrop ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 0, 0, 0.3)';
+    } else if (isCheck) {
+        bgColor = 'rgba(255, 0, 0, 0.5)'; // Red for check
+    } else if (isLastMove) {
+        bgColor = 'rgba(255, 255, 0, 0.3)'; // Yellow for last move
+    }
+
     return (
         <div
             ref={(node: any) => { drop(node); }}
@@ -34,10 +45,40 @@ const BoardSquare = ({ x, y, children, onMove, selectedPos, handleSquareClick }:
                 height: '12.5%',
                 left: `${x * 12.5}%`,
                 top: `${(7 - y) * 12.5}%`,
-                backgroundColor: isOver ? (canDrop ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 0, 0, 0.3)') : undefined
+                backgroundColor: bgColor
             }}
         >
             {children}
+
+            {/* Legal Move Dot */}
+            {isLegalMove && !children && (
+                <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: '25%',
+                    height: '25%',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(0, 0, 0, 0.3)'
+                }} />
+            )}
+
+            {/* Legal Capture Ring */}
+            {isLegalMove && children && (
+                <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: '90%',
+                    height: '90%',
+                    borderRadius: '50%',
+                    border: '3px solid rgba(0, 0, 0, 0.3)',
+                    pointerEvents: 'none'
+                }} />
+            )}
+
             {/* Rank Number (Left side only) */}
             {x === 0 && (
                 <span className={`coord rank`} style={{
@@ -123,22 +164,60 @@ const DraggablePiece = ({ piece, onSelect }: any) => {
     );
 };
 
-export const Board2D = () => {
-    const { game, executeMove } = useGameStore();
+interface Board2DProps {
+    onPieceSelect?: (position: string | null) => void;
+}
+
+interface PendingPromotion {
+    from: string;
+    to: string;
+    color: number;
+}
+
+export const Board2D = ({ onPieceSelect }: Board2DProps) => {
+    const { game, executeMove, legalMoves, getLegalMoves, clearLegalMoves } = useGameStore();
     const [selectedPos, setSelectedPos] = useState<string | null>(null);
+    const [pendingPromotion, setPendingPromotion] = useState<PendingPromotion | null>(null);
+
+    // Notify parent when selection changes
+    const updateSelection = (pos: string | null) => {
+        setSelectedPos(pos);
+        onPieceSelect?.(pos);
+    };
 
     // Helpers
     const toAlgebraic = (x: number, y: number) =>
         `${String.fromCharCode(97 + x)}${y + 1}`;
 
+    // Check if a move is a pawn promotion
+    const isPromotionMove = (from: string, to: string): number | null => {
+        if (!game) return null;
+        const piece = game.pieces.find(p => p.position === from);
+        if (!piece || piece.type !== 0) return null; // Not a pawn
 
+        const toRank = parseInt(to[1]);
+        // White promotes on rank 8, Black promotes on rank 1
+        if ((piece.color === 0 && toRank === 8) || (piece.color === 1 && toRank === 1)) {
+            return piece.color;
+        }
+        return null;
+    };
 
-    const handleSquareClick = (alg: string) => {
+    const handlePromotionSelect = async (pieceType: number) => {
+        if (!game || !pendingPromotion) return;
+        await executeMove(game.id, pendingPromotion.from, pendingPromotion.to, pieceType);
+        setPendingPromotion(null);
+        updateSelection(null);
+        clearLegalMoves();
+    };
+
+    const handleSquareClick = async (alg: string) => {
         if (!game) return;
 
         // Same piece deselect
         if (selectedPos === alg) {
-            setSelectedPos(null);
+            updateSelection(null);
+            clearLegalMoves();
             return;
         }
 
@@ -150,14 +229,24 @@ export const Board2D = () => {
             const selectedPiece = game.pieces.find(p => p.position === selectedPos);
 
             if (selectedPiece && clickedPiece && selectedPiece.color === clickedPiece.color) {
-                setSelectedPos(alg);
+                updateSelection(alg);
+                getLegalMoves(game.id, alg);
             } else {
-                executeMove(game.id, selectedPos, alg);
-                setSelectedPos(null);
+                // Check if this is a promotion move
+                const promotionColor = isPromotionMove(selectedPos, alg);
+                if (promotionColor !== null) {
+                    // Show promotion picker instead of executing immediately
+                    setPendingPromotion({ from: selectedPos, to: alg, color: promotionColor });
+                } else {
+                    executeMove(game.id, selectedPos, alg);
+                    updateSelection(null);
+                    clearLegalMoves();
+                }
             }
         } else {
-            if (clickedPiece) {
-                setSelectedPos(alg);
+            if (clickedPiece && clickedPiece.color === game.currentTurn) {
+                updateSelection(alg);
+                getLegalMoves(game.id, alg);
             }
         }
     };
@@ -166,8 +255,17 @@ export const Board2D = () => {
 
     const handleMove = (from: string, to: string) => {
         if (from === to) return;
+
+        // Check if this is a promotion move
+        const promotionColor = isPromotionMove(from, to);
+        if (promotionColor !== null) {
+            setPendingPromotion({ from, to, color: promotionColor });
+            return;
+        }
+
         executeMove(game.id, from, to);
-        setSelectedPos(null);
+        updateSelection(null);
+        clearLegalMoves();
     };
 
     // --- Render Board Squares ---
@@ -177,6 +275,15 @@ export const Board2D = () => {
             const alg = toAlgebraic(file, rank);
             const piece = game.pieces.find(p => p.position === alg);
 
+            // Check if this square is in check (king's position)
+            const isCheck = game.kingInCheckPosition === alg;
+
+            // Check if this is part of the last move
+            const isLastMove = game.lastMoveFrom === alg || game.lastMoveTo === alg;
+
+            // Check if this is a legal destination for the selected piece
+            const isLegalMove = selectedPos && legalMoves.includes(alg);
+
             squares.push(
                 <BoardSquare
                     key={alg}
@@ -185,6 +292,9 @@ export const Board2D = () => {
                     onMove={handleMove}
                     selectedPos={selectedPos}
                     handleSquareClick={handleSquareClick}
+                    isCheck={isCheck}
+                    isLastMove={isLastMove}
+                    isLegalMove={isLegalMove}
                 >
                     {piece && (
                         <DraggablePiece
@@ -218,6 +328,15 @@ export const Board2D = () => {
                     <span>Black: Top (8)</span>
                 </div>
             </div>
+
+            {/* Promotion Picker Modal */}
+            {pendingPromotion && (
+                <PromotionPicker
+                    color={pendingPromotion.color}
+                    onSelect={handlePromotionSelect}
+                    onCancel={() => setPendingPromotion(null)}
+                />
+            )}
         </DndProvider>
     );
 };
