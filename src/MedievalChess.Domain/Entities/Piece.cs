@@ -34,6 +34,7 @@ public abstract class Piece : AggregateRoot<Guid>
         Loyalty = new LoyaltyValue(80); // Default Loyal
         Level = 1;
         XP = 0;
+        PromotionTier = string.Empty;
         // HP Initialization depends on concrete class, will be set in constructor or init
     }
 
@@ -82,17 +83,18 @@ public abstract class Piece : AggregateRoot<Guid>
         HasMoved = true;
     }
 
+    public string PromotionTier { get; internal set; } = string.Empty;
+
     public void GainXP(int amount)
     {
         XP += amount;
-        // Simple level up logic for now: Level * 100 XP required
-        if (XP >= Level * 100)
-        {
-            XP -= Level * 100;
-            Level++;
-            MaxHP += 5; 
-            CurrentHP = MaxHP; // Heal on level up
-        }
+    }
+
+    public void LevelUp()
+    {
+        Level++;
+        MaxHP += 5;
+        CurrentHP = MaxHP; // Heal on level up
     }
 
     /// <summary>

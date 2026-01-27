@@ -21,6 +21,7 @@ interface Piece {
     // Medieval fields
     level: number;
     xp: number;
+    promotionTier: string;
     isDefecting: boolean;
     court: string | null;
     abilities: PieceAbility[];
@@ -40,6 +41,8 @@ interface GameState {
     kingInCheckPosition?: string;
     lastMoveFrom?: string;
     lastMoveTo?: string;
+    lastMoveIsBounce?: boolean;
+    lastMoveDamage?: number;
 }
 
 interface GameStore {

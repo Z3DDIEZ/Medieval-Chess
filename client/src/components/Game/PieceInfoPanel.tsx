@@ -18,6 +18,7 @@ interface Piece {
     currentHP: number;
     level: number;
     xp: number;
+    promotionTier: string;
     isDefecting: boolean;
     court: string | null;
     abilities: PieceAbility[];
@@ -117,20 +118,33 @@ export const PieceInfoPanel = ({ piece, onClose }: PieceInfoPanelProps) => {
                 </div>
                 <div className="piece-info-title">
                     <h3>{colorName} {pieceName}</h3>
-                    <span className="piece-position">{piece.position.toUpperCase()}</span>
-                    {piece.level > 1 && (
-                        <span style={{
-                            marginLeft: '8px',
-                            background: '#ffd700',
-                            color: '#000',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            fontSize: '0.8em',
-                            fontWeight: 'bold'
-                        }}>
-                            Lv.{piece.level}
-                        </span>
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className="piece-position">{piece.position.toUpperCase()}</span>
+                        {piece.promotionTier && (
+                            <span style={{
+                                background: '#e0e0e0',
+                                color: '#333',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                fontSize: '0.8em',
+                                fontStyle: 'italic'
+                            }}>
+                                {piece.promotionTier}
+                            </span>
+                        )}
+                        {piece.level > 1 && (
+                            <span style={{
+                                background: '#ffd700',
+                                color: '#000',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                fontSize: '0.8em',
+                                fontWeight: 'bold'
+                            }}>
+                                Lv.{piece.level}
+                            </span>
+                        )}
+                    </div>
                 </div>
                 <button className="piece-info-close" onClick={onClose}>×</button>
             </div>

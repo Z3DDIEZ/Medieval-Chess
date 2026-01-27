@@ -156,6 +156,8 @@ public class GamesController : ControllerBase
                 : null,
             LastMoveFrom = lastMove?.From.ToAlgebraic(),
             LastMoveTo = lastMove?.To.ToAlgebraic(),
+            LastMoveIsBounce = lastMove?.IsAttackBounce ?? false,
+            LastMoveDamage = lastMove?.DamageDealt,
             // Only include active pieces (not captured)
             Pieces = game.Board.Pieces
                 .Where(p => p.Position != null)
@@ -171,6 +173,7 @@ public class GamesController : ControllerBase
                     // New Medieval fields
                     p.Level,
                     p.XP,
+                    p.PromotionTier,
                     IsDefecting = p.IsDefecting,
                     Court = p.Position.HasValue 
                         ? MedievalChess.Domain.Enums.CourtHelper.GetCourt(p.Position.Value).ToString() 

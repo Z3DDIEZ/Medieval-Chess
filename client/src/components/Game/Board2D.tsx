@@ -10,7 +10,7 @@ const ItemTypes = {
     PIECE: 'piece'
 };
 
-const BoardSquare = ({ x, y, children, onMove, selectedPos, handleSquareClick, isCheck, isLastMove, isLegalMove, flipped }: any) => {
+const BoardSquare = ({ x, y, children, onMove, selectedPos, handleSquareClick, isCheck, isLastMove, isLegalMove, flipped, isBounceTarget }: any) => {
     const alg = `${String.fromCharCode(97 + x)}${y + 1}`;
     const isDark = (x + y) % 2 === 0;
     const isSelected = selectedPos === alg;
@@ -37,6 +37,17 @@ const BoardSquare = ({ x, y, children, onMove, selectedPos, handleSquareClick, i
     } else if (isLastMove) {
         bgColor = 'rgba(255, 255, 0, 0.3)'; // Yellow for last move
     }
+
+    // Override if bounce target
+    if (isBounceTarget) {
+        bgColor = 'rgba(255, 0, 0, 0.6)'; // Stronger red for attack impact
+    }
+
+    // Bounce/Damage Highlight (Visual Feedback)
+    // We pass a new prop `isBounceTarget` or handle it via a style override passed in children?
+    // Actually, let's just use a special border or overlay in the square itself if passed down.
+    // Ideally we'd modify props, but let's see if we can infer or pass it.
+    // The parent passes `isLastMove`. We can add `isBounceTarget`.
 
     // Show file labels on rank 1 (or 8 if flipped)
     const showFileLabel = flipped ? y === 7 : y === 0;
@@ -354,6 +365,9 @@ export const Board2D = ({ onPieceSelect, flipped = false }: Board2DProps) => {
             // Check if this is a legal destination for the selected piece
             const isLegalMove = selectedPos && legalMoves.includes(alg);
 
+            // Check if this square was the target of a bounce attack
+            const isBounceTarget = game.lastMoveIsBounce && game.lastMoveTo === alg;
+
             squares.push(
                 <BoardSquare
                     key={alg}
@@ -366,12 +380,31 @@ export const Board2D = ({ onPieceSelect, flipped = false }: Board2DProps) => {
                     isCheck={isCheck}
                     isLastMove={isLastMove}
                     isLegalMove={isLegalMove}
+                    isBounceTarget={isBounceTarget}
                 >
                     {piece && (
                         <DraggablePiece
                             piece={piece}
                             onSelect={() => handleSquareClick(alg)}
                         />
+                    )}
+
+                    {/* Floating Damage Number */}
+                    {isBounceTarget && game.lastMoveDamage && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '0',
+                            width: '100%',
+                            textAlign: 'center',
+                            color: 'red',
+                            fontWeight: 'bold',
+                            fontSize: '1.2em',
+                            textShadow: '0 0 2px white',
+                            zIndex: 30,
+                            animation: 'floatUp 1s ease-out forwards'
+                        }}>
+                            -{game.lastMoveDamage}
+                        </div>
                     )}
                 </BoardSquare>
             );
@@ -393,11 +426,26 @@ export const Board2D = ({ onPieceSelect, flipped = false }: Board2DProps) => {
                     {squares}
                 </div>
 
-                {/* External Labels (Optional: if we want them outside instead of inside) */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginTop: '10px', fontWeight: 'bold', color: '#5c2c2c' }}>
                     <span>White: Bottom (1)</span>
                     <span>Black: Top (8)</span>
                 </div>
+
+                {/* Status Message for Attrition */}
+                {game.lastMoveIsBounce && game.lastMoveTo && (
+                    <div style={{
+                        marginTop: '10px',
+                        padding: '8px',
+                        background: '#ffebee',
+                        color: '#c62828',
+                        border: '1px solid #ef9a9a',
+                        borderRadius: '4px',
+                        textAlign: 'center',
+                        fontWeight: 'bold'
+                    }}>
+                        ⚔️ Attack Bounced! {game.lastMoveDamage ? `${game.lastMoveDamage} Damage Dealt` : ''}
+                    </div>
+                )}
             </div>
 
             {/* Promotion Picker Modal */}

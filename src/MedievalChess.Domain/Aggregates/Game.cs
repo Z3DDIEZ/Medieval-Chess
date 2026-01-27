@@ -11,7 +11,12 @@ public class Game : AggregateRoot<Guid>
     public bool IsStressState { get; private set; }
     public bool IsAttritionMode { get; private set; }
     public int CombatSeed { get; private set; }
-    public const int AttritionModeStartTurn = 12;
+    public const int AttritionModeStartTurn = 3;
+
+    public CourtControl KingsCourtControl { get; private set; }
+    public CourtControl QueensCourtControl { get; private set; }
+    public int KingsCourtContestedTurns { get; private set; }
+    public int QueensCourtContestedTurns { get; private set; }
 
     public int TotalWhiteLevel { get; private set; }
     public int TotalBlackLevel { get; private set; }
@@ -208,6 +213,22 @@ public class Game : AggregateRoot<Guid>
         move.Notation = move.ToAlgebraicNotation();
         _playedMoves.Add(move);
 
+        // XP Awards
+        var xpManager = new Logic.XPManager(this);
+        
+        // 1. Capture XP
+        if (move.CapturedPiece != null) // Works for standard and attrition kills
+        {
+            xpManager.AwardCaptureXP(move.Piece, move.CapturedPiece);
+        }
+        
+        // 2. Check XP (calculated later in method when verifying move legality/check status for notation)
+        // Wait, check status is calculated below in EndTurn or at end of ExecuteMove?
+        // It's calculated in "EndTurn" logic usually, or here for move property.
+        // Lines 283+ in EndTurn set IsCheck. The engine call happens there.
+        // I should add XP award there or move check logic here?
+        // Let's add it where IsCheck is determined.
+
 
 
         // Deduct AP (Move costs 1 AP)
@@ -241,8 +262,76 @@ public class Game : AggregateRoot<Guid>
         _loyaltyRelationships.Add(relationship);
     }
     
+    private void CheckStressState(Logic.IEngineService engine)
+    {
+        // 1. King in Check
+        bool kingInCheck = engine.IsKingInCheck(Board, CurrentTurn);
+
+        // 2. Queen Captured
+        var queen = Board.Pieces.FirstOrDefault(p => p.Color == CurrentTurn && p.Type == PieceType.Queen);
+        bool queenCaptured = queen == null || queen.IsCaptured;
+
+        // 3. 50% Losses
+        var startingCount = 16;
+        var currentCount = Board.Pieces.Count(p => p.Color == CurrentTurn && !p.IsCaptured);
+        bool heavyLosses = currentCount <= startingCount / 2;
+
+        if (kingInCheck || queenCaptured || heavyLosses)
+        {
+            if (!IsStressState)
+            {
+                IsStressState = true;
+                // Trigger transition events via LoyaltyManager if needed (e.g. transfer vassals)
+                // For now, IsStressState flag is enough for LoyaltyManager to check
+            }
+        }
+    }
+
+    private void CheckCourtControl()
+    {
+        // King's Court: Files 0-3 (a-d). Queen's Court: Files 4-7 (e-h)
+        // Count pieces for each side in each court
+        int whiteKingsCourt = CountPiecesInFiles(PlayerColor.White, 0, 3);
+        int blackKingsCourt = CountPiecesInFiles(PlayerColor.Black, 0, 3);
+        
+        int whiteQueensCourt = CountPiecesInFiles(PlayerColor.White, 4, 7);
+        int blackQueensCourt = CountPiecesInFiles(PlayerColor.Black, 4, 7);
+
+        KingsCourtControl = DetermineControl(whiteKingsCourt, blackKingsCourt);
+        QueensCourtControl = DetermineControl(whiteQueensCourt, blackQueensCourt);
+        
+        // Update Contested Counters
+        if (KingsCourtControl == CourtControl.Contested) KingsCourtContestedTurns++;
+        else KingsCourtContestedTurns = 0;
+
+        if (QueensCourtControl == CourtControl.Contested) QueensCourtContestedTurns++;
+        else QueensCourtContestedTurns = 0;
+    }
+
+    private int CountPiecesInFiles(PlayerColor color, int minFile, int maxFile)
+    {
+        return Board.Pieces.Count(p => 
+            p.Color == color && 
+            !p.IsCaptured && 
+            p.Position.HasValue && 
+            p.Position.Value.File >= minFile && 
+            p.Position.Value.File <= maxFile);
+    }
+
+    private CourtControl DetermineControl(int whiteCount, int blackCount)
+    {
+        if (whiteCount > blackCount + 1) return CourtControl.WhiteControlled;
+        if (blackCount > whiteCount + 1) return CourtControl.BlackControlled;
+        if (whiteCount == 0 && blackCount == 0) return CourtControl.Neutral;
+        return CourtControl.Contested; // Close numbers implies contested
+    }
+
     private void EndTurn(Logic.IEngineService engine)
     {
+        // 0. Update Game State (Stress, Courts)
+        CheckStressState(engine);
+        CheckCourtControl();
+
         // 1. Loyalty Updates
         var loyaltyManager = new Logic.LoyaltyManager(this);
         loyaltyManager.UpdateLoyalty();
@@ -257,6 +346,22 @@ public class Game : AggregateRoot<Guid>
         var abilityManager = new Logic.AbilityManager(this);
         abilityManager.AdvanceCooldowns();
         abilityManager.TickEffects();
+        
+        // 5. Survival XP (Every 5 turns)
+        // If TurnNumber is multiple of 5, award surviving pieces?
+        // Note: TurnNumber increments below for the next player.
+        // We should probably check before incrementing or check (TurnNumber) for the player who just finished?
+        // Game turn is global. Let's do it after increment to be safe or before.
+        // If we do global turn 5, 10, 15...
+        // Let's do it here:
+        if (TurnNumber > 0 && TurnNumber % 5 == 0)
+        {
+            var xpManager = new Logic.XPManager(this);
+            foreach (var piece in Board.Pieces.Where(p => !p.IsCaptured))
+            {
+                xpManager.AwardSurvivalXP(piece);
+            }
+        }
 
         // 3. Switch Turn
         CurrentTurn = CurrentTurn == PlayerColor.White ? PlayerColor.Black : PlayerColor.White;
@@ -286,6 +391,9 @@ public class Game : AggregateRoot<Guid>
             if (engine.IsKingInCheck(Board, CurrentTurn))
             {
                 lastMove.IsCheck = true;
+                
+                // Award XP for Check
+                new Logic.XPManager(this).AwardCheckXP(lastMove.Piece);
                 
                 if (engine.IsCheckmate(Board, CurrentTurn))
                 {

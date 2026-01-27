@@ -73,7 +73,16 @@ public class LoyaltyManager
     {
         var rel = _game.LoyaltyRelationships.FirstOrDefault(r => r.VassalId == vassal.Id);
         if (rel == null) return null;
-        return _game.Board.Pieces.FirstOrDefault(p => p.Id == rel.LordId);
+        
+        var lord = _game.Board.Pieces.FirstOrDefault(p => p.Id == rel.LordId);
+        
+        if (_game.IsStressState && lord != null && lord.Type == PieceType.Queen)
+        {
+            // Redirect to King of same color
+            return _game.Board.Pieces.FirstOrDefault(p => p.Type == PieceType.King && p.Color == lord.Color);
+        }
+        
+        return lord;
     }
 
     private IEnumerable<Piece> GetVassalsOf(Piece lord)
@@ -136,18 +145,31 @@ public class LoyaltyManager
         {
             var pos = piece.Position!.Value;
             var court = CourtHelper.GetCourt(pos);
-            
-            // Simplified: All pieces in their "home" half get +5 LV
-            // In full implementation, this would be more nuanced based on starting position
-            bool inHomeCourt = (piece.Color == PlayerColor.White && court == CourtType.KingsCourt) ||
-                               (piece.Color == PlayerColor.Black && court == CourtType.QueensCourt);
-            
-            // For now, just apply bonus to pieces near King (King's Court) or Queen (Queen's Court)
-            // This is a simplified interpretation
-            if (inHomeCourt)
+            int bonus = 0;
+
+            if (court == CourtType.KingsCourt)
             {
-                ModifyLoyalty(piece, 5);
+                // King's Court (a-d)
+                if (IsControlledBy(_game.KingsCourtControl, piece.Color)) bonus = 5;
+                else if (_game.KingsCourtControl == CourtControl.Contested) bonus = 2;
+            }
+            else
+            {
+                // Queen's Court (e-h)
+                if (IsControlledBy(_game.QueensCourtControl, piece.Color)) bonus = 5;
+                else if (_game.QueensCourtControl == CourtControl.Contested) bonus = 2;
+            }
+
+            if (bonus > 0)
+            {
+                ModifyLoyalty(piece, bonus);
             }
         }
+    }
+
+    private bool IsControlledBy(CourtControl control, PlayerColor color)
+    {
+        return (color == PlayerColor.White && control == CourtControl.WhiteControlled) ||
+               (color == PlayerColor.Black && control == CourtControl.BlackControlled);
     }
 }
