@@ -11,6 +11,7 @@ public class Pawn : Piece
     {
         MaxHP = 20;
         CurrentHP = MaxHP;
+        Armor = 2;
     }
 
     private Pawn() { } // EF Core

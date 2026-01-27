@@ -129,12 +129,3 @@ export const Piece3D = ({ type, color, position }: Piece3DProps) => {
     );
 };
 
-// Export attribution info for display
-export const PIECE_MODEL_ATTRIBUTION = {
-    title: 'Low Poly Chess Pieces',
-    author: 'Steva_',
-    authorUrl: 'https://sketchfab.com/Steva_',
-    sourceUrl: 'https://skfb.ly/6TErq',
-    license: 'CC BY 4.0',
-    licenseUrl: 'http://creativecommons.org/licenses/by/4.0/',
-};

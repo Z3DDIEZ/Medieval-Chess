@@ -239,6 +239,20 @@ export const Board3D = ({ onPieceSelect }: Board3DProps) => {
                                 </mesh>
                             )}
 
+                            {/* Always visible HP bar if damaged or in Attrition Mode */}
+                            {(p.currentHP < p.maxHP || game?.isAttritionMode) && !isSelected && (
+                                <Html position={[px, 0.9, pz]} center style={{ pointerEvents: 'none' }}>
+                                    <div style={{ width: '32px', height: '4px', background: '#222', border: '1px solid #111', borderRadius: '1px' }}>
+                                        <div style={{
+                                            width: `${(p.currentHP / p.maxHP) * 100}%`,
+                                            height: '100%',
+                                            background: p.currentHP < p.maxHP * 0.3 ? '#ff3333' : '#33ff33',
+                                            transition: 'width 0.3s ease'
+                                        }} />
+                                    </div>
+                                </Html>
+                            )}
+
                             {/* Info tooltip on selection */}
                             {isSelected && (
                                 <Html
@@ -260,7 +274,10 @@ export const Board3D = ({ onPieceSelect }: Board3DProps) => {
                                             {typeNames[p.type]}
                                         </div>
                                         <div style={{ color: '#aaa' }}>Loyalty: {p.loyalty}%</div>
-                                        <div style={{ color: '#ff8888' }}>HP: {p.currentHP}/{p.maxHP}</div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
+                                            <span style={{ color: '#ff8888' }}>HP: {p.currentHP}/{p.maxHP}</span>
+                                            <span style={{ color: '#aaa' }}>Def: {p.armor}</span>
+                                        </div>
                                     </div>
                                 </Html>
                             )}

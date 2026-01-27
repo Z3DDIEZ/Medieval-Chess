@@ -11,6 +11,7 @@ public class Bishop : Piece
     {
         MaxHP = 40;
         CurrentHP = MaxHP;
+        Armor = 5;
     }
 
     private Bishop() { }

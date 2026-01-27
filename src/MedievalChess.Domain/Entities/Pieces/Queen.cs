@@ -11,6 +11,7 @@ public class Queen : Piece
     {
         MaxHP = 80;
         CurrentHP = MaxHP;
+        Armor = 10;
     }
 
     private Queen() { }

@@ -21,6 +21,10 @@ public class Move
     public bool IsCheck { get; set; }
     public bool IsCheckmate { get; set; }
     
+    // Attrition Flags
+    public int? DamageDealt { get; set; }
+    public bool IsAttackBounce { get; set; }
+    
     // Notation for UI/History
     public string Notation { get; set; } = string.Empty;
 

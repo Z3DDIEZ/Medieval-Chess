@@ -7,6 +7,15 @@ namespace MedievalChess.Domain.Aggregates;
 
 public class Game : AggregateRoot<Guid>
 {
+    // Game Mode Flags
+    public bool IsStressState { get; private set; }
+    public bool IsAttritionMode { get; private set; }
+    public int CombatSeed { get; private set; }
+    public const int AttritionModeStartTurn = 12;
+
+    public int TotalWhiteLevel { get; private set; }
+    public int TotalBlackLevel { get; private set; }
+    
     public Board Board { get; private set; }
     public PlayerColor CurrentTurn { get; private set; }
     public GameStatus Status { get; private set; }
@@ -38,6 +47,7 @@ public class Game : AggregateRoot<Guid>
         {
             Id = Guid.NewGuid(),
             Board = Board.CreateStandardSetup(),
+            CombatSeed = new Random().Next(),
 
             CurrentTurn = PlayerColor.White,
             Status = GameStatus.InProgress,
@@ -107,16 +117,44 @@ public class Game : AggregateRoot<Guid>
             }
         }
         
-        // Standard capture
-        if (targetPiece != null)
+        // Attrition Mode Combat
+        if (IsAttritionMode && targetPiece != null && !isCastling && !isEnPassant)
         {
-            targetPiece.Capture(); // Use proper capture instead of TakeDamage(999)
+            var combatManager = new Logic.CombatManager(this);
+            var result = combatManager.CalculateCombat(piece, targetPiece);
+            
+            targetPiece.TakeDamage(result.DamageDealt);
+            move.DamageDealt = result.DamageDealt;
+            
+            if (targetPiece.IsCaptured)
+            {
+                Board.ResetHalfMoveClock();
+            }
+            else
+            {
+                // Attack Bounce: Attacker stays, defender survives (damaged)
+                move.IsAttackBounce = true;
+                
+                // Do NOT move the piece
+                // Do NOT increment half-move clock (it was an irreversible action - happened - damage)
+                // Actually reset it? Damage is progress. Capture is reset. Pawn move is reset.
+                // Resetting implies it's "progress". Yes, damage is permanent progress.
+                Board.ResetHalfMoveClock(); 
+            }
+        }
+        else if (targetPiece != null)
+        {
+            // Standard Instant Capture
+            targetPiece.Capture();
             Board.ResetHalfMoveClock();
         }
-        
-        // Execute the move
-        piece.MoveTo(to);
-        piece.MarkAsMoved();
+
+        // Execute the move (only if not a bounce)
+        if (!move.IsAttackBounce)
+        {
+            piece.MoveTo(to);
+            piece.MarkAsMoved();
+        }
         
         // Pawn promotion
         if (piece.Type == PieceType.Pawn && Entities.Pieces.Pawn.IsPromotionRank(to.Rank, piece.Color))
@@ -225,6 +263,14 @@ public class Game : AggregateRoot<Guid>
         if (CurrentTurn == PlayerColor.White)
         {
             TurnNumber++;
+            
+            // Check for Attrition Mode Trigger
+            if (!IsAttritionMode && TurnNumber >= AttritionModeStartTurn)
+            {
+                IsAttritionMode = true;
+                // Once triggered, stays on? Rules say "Activates". Assuming permanent.
+                // Could verify if we need to initialize anything (HP is already set).
+            }
         }
         
         // 4. Grant AP

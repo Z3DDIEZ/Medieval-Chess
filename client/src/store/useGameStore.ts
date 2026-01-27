@@ -17,6 +17,7 @@ interface Piece {
     loyalty: number;
     maxHP: number;
     currentHP: number;
+    armor: number; // Added
     // Medieval fields
     level: number;
     xp: number;
@@ -30,6 +31,9 @@ interface GameState {
     status: number;
     currentTurn: number;
     turnNumber: number;
+    isAttritionMode: boolean; // Added
+    whiteAP: number; // Added
+    blackAP: number; // Added
     pieces: Piece[];
     moveHistory?: string[]; // Algebraic notation moves e.g. ["e4", "e5"]
     isCheck?: boolean;

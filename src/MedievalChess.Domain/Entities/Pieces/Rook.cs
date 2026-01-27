@@ -11,6 +11,7 @@ public class Rook : Piece
     {
         MaxHP = 60;
         CurrentHP = MaxHP;
+        Armor = 8;
     }
 
     private Rook() { }

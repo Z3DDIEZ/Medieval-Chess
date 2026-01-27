@@ -11,6 +11,7 @@ public class Knight : Piece
     {
         MaxHP = 40;
         CurrentHP = MaxHP;
+        Armor = 5;
     }
 
     private Knight() { }

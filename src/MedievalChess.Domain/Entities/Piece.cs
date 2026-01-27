@@ -18,6 +18,7 @@ public abstract class Piece : AggregateRoot<Guid>
     // Combat (Attrition Mode)
     public int MaxHP { get; protected set; }
     public int CurrentHP { get; protected set; }
+    public int Armor { get; protected set; }
     
     // New Collections
     public List<PieceAbility> Abilities { get; private set; } = new();

@@ -11,6 +11,7 @@ public class King : Piece
     {
         MaxHP = 100;
         CurrentHP = MaxHP;
+        Armor = 15;
     }
 
     private King() { }

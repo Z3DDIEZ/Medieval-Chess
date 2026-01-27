@@ -147,6 +147,9 @@ public class GamesController : ControllerBase
             game.Status,
             game.CurrentTurn,
             game.TurnNumber,
+            game.IsAttritionMode,
+            game.WhiteAP,
+            game.BlackAP,
             IsCheck = isCheck,
             KingInCheckPosition = isCheck && currentKing?.Position != null 
                 ? currentKing.Position.Value.ToAlgebraic() 
@@ -164,6 +167,7 @@ public class GamesController : ControllerBase
                     Loyalty = p.Loyalty.Value,
                     p.MaxHP,
                     p.CurrentHP,
+                    p.Armor,
                     // New Medieval fields
                     p.Level,
                     p.XP,
