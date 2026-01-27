@@ -1,6 +1,14 @@
 import { getPieceComponent } from './ChessAssets';
 import './BoardTheme.css';
 
+interface PieceAbility {
+    abilityDefinitionId: string;
+    currentCooldown: number;
+    maxCooldown: number;
+    upgradeTier: number;
+    isReady: boolean;
+}
+
 interface Piece {
     type: number;
     color: number;
@@ -8,6 +16,11 @@ interface Piece {
     loyalty: number;
     maxHP: number;
     currentHP: number;
+    level: number;
+    xp: number;
+    isDefecting: boolean;
+    court: string | null;
+    abilities: PieceAbility[];
 }
 
 interface PieceInfoPanelProps {
@@ -83,6 +96,19 @@ export const PieceInfoPanel = ({ piece, onClose }: PieceInfoPanelProps) => {
     const hpPercent = piece.maxHP > 0 ? (piece.currentHP / piece.maxHP) * 100 : 100;
     const loyaltyPercent = Math.min(100, Math.max(0, piece.loyalty));
 
+    // XP needed for next level (Level * 100)
+    const xpForNextLevel = piece.level * 100;
+    const xpPercent = xpForNextLevel > 0 ? (piece.xp / xpForNextLevel) * 100 : 0;
+
+    // Loyalty status
+    const getLoyaltyStatus = (loyalty: number) => {
+        if (loyalty >= 80) return { label: 'Loyal', color: '#4caf50' };
+        if (loyalty >= 50) return { label: 'Steady', color: '#8bc34a' };
+        if (loyalty >= 30) return { label: 'Wavering', color: '#ff9800' };
+        return { label: 'Disloyal', color: '#f44336' };
+    };
+    const loyaltyStatus = getLoyaltyStatus(piece.loyalty);
+
     return (
         <div className="piece-info-panel">
             <div className="piece-info-header">
@@ -92,11 +118,48 @@ export const PieceInfoPanel = ({ piece, onClose }: PieceInfoPanelProps) => {
                 <div className="piece-info-title">
                     <h3>{colorName} {pieceName}</h3>
                     <span className="piece-position">{piece.position.toUpperCase()}</span>
+                    {piece.level > 1 && (
+                        <span style={{
+                            marginLeft: '8px',
+                            background: '#ffd700',
+                            color: '#000',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            fontSize: '0.8em',
+                            fontWeight: 'bold'
+                        }}>
+                            Lv.{piece.level}
+                        </span>
+                    )}
                 </div>
                 <button className="piece-info-close" onClick={onClose}>×</button>
             </div>
 
+            {/* Defection Warning */}
+            {piece.isDefecting && (
+                <div style={{
+                    background: '#ff5722',
+                    color: 'white',
+                    padding: '8px 12px',
+                    textAlign: 'center',
+                    fontWeight: 'bold',
+                    fontSize: '0.85em'
+                }}>
+                    ⚠️ DEFECTION IMMINENT
+                </div>
+            )}
+
             <div className="piece-info-body">
+                {/* Court Position */}
+                {piece.court && (
+                    <div className="piece-stat-row">
+                        <span className="stat-label">Court</span>
+                        <span className="stat-value" style={{ color: piece.court === 'KingsCourt' ? '#4fc3f7' : '#ba68c8' }}>
+                            {piece.court === 'KingsCourt' ? "👑 King's Court" : "♛ Queen's Court"}
+                        </span>
+                    </div>
+                )}
+
                 {/* Value */}
                 <div className="piece-stat-row">
                     <span className="stat-label">Value</span>
@@ -105,7 +168,19 @@ export const PieceInfoPanel = ({ piece, onClose }: PieceInfoPanelProps) => {
                     </span>
                 </div>
 
-                {/* HP Bar (for Medieval mode) */}
+                {/* Level & XP */}
+                <div className="piece-stat-row">
+                    <span className="stat-label">Level {piece.level}</span>
+                    <div className="stat-bar-container">
+                        <div
+                            className="stat-bar"
+                            style={{ width: `${xpPercent}%`, background: 'linear-gradient(90deg, #ffd700, #ffeb3b)' }}
+                        />
+                        <span className="stat-bar-text">{piece.xp}/{xpForNextLevel} XP</span>
+                    </div>
+                </div>
+
+                {/* HP Bar */}
                 <div className="piece-stat-row">
                     <span className="stat-label">HP</span>
                     <div className="stat-bar-container">
@@ -117,15 +192,17 @@ export const PieceInfoPanel = ({ piece, onClose }: PieceInfoPanelProps) => {
                     </div>
                 </div>
 
-                {/* Loyalty Bar (for Medieval mode) */}
+                {/* Loyalty Bar */}
                 <div className="piece-stat-row">
                     <span className="stat-label">Loyalty</span>
                     <div className="stat-bar-container">
                         <div
-                            className="stat-bar loyalty-bar"
-                            style={{ width: `${loyaltyPercent}%` }}
+                            className="stat-bar"
+                            style={{ width: `${loyaltyPercent}%`, background: loyaltyStatus.color }}
                         />
-                        <span className="stat-bar-text">{piece.loyalty}%</span>
+                        <span className="stat-bar-text" style={{ color: loyaltyStatus.color }}>
+                            {piece.loyalty}% ({loyaltyStatus.label})
+                        </span>
                     </div>
                 </div>
 
@@ -134,12 +211,41 @@ export const PieceInfoPanel = ({ piece, onClose }: PieceInfoPanelProps) => {
                     <p>{description}</p>
                 </div>
 
-                {/* Medieval Mechanics Hint (placeholder for future) */}
+                {/* Abilities Section */}
                 <div className="piece-abilities">
                     <div className="ability-header">Abilities</div>
-                    <div className="ability-placeholder">
-                        <em style={{ color: '#888' }}>Standard chess rules active</em>
-                    </div>
+                    {piece.abilities && piece.abilities.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {piece.abilities.map((ability, idx) => (
+                                <div key={idx} style={{
+                                    background: ability.isReady ? 'rgba(76, 175, 80, 0.2)' : 'rgba(100, 100, 100, 0.2)',
+                                    padding: '8px',
+                                    borderRadius: '4px',
+                                    borderLeft: ability.isReady ? '3px solid #4caf50' : '3px solid #666'
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontWeight: 'bold', fontSize: '0.9em' }}>
+                                            Tier {ability.upgradeTier + 1} Ability
+                                        </span>
+                                        {!ability.isReady && (
+                                            <span style={{ color: '#ff9800', fontSize: '0.8em' }}>
+                                                CD: {ability.currentCooldown}/{ability.maxCooldown}
+                                            </span>
+                                        )}
+                                        {ability.isReady && (
+                                            <span style={{ color: '#4caf50', fontSize: '0.8em' }}>
+                                                READY
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="ability-placeholder">
+                            <em style={{ color: '#888' }}>No abilities unlocked yet</em>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

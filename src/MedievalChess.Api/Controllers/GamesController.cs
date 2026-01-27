@@ -163,7 +163,22 @@ public class GamesController : ControllerBase
                     Position = p.Position?.ToAlgebraic(),
                     Loyalty = p.Loyalty.Value,
                     p.MaxHP,
-                    p.CurrentHP
+                    p.CurrentHP,
+                    // New Medieval fields
+                    p.Level,
+                    p.XP,
+                    IsDefecting = p.IsDefecting,
+                    Court = p.Position.HasValue 
+                        ? MedievalChess.Domain.Enums.CourtHelper.GetCourt(p.Position.Value).ToString() 
+                        : null,
+                    Abilities = p.Abilities.Select(a => new
+                    {
+                        a.AbilityDefinitionId,
+                        a.CurrentCooldown,
+                        a.MaxCooldown,
+                        a.UpgradeTier,
+                        a.IsReady
+                    }).ToList()
                 }),
             // Include move history for the sidebar
             MoveHistory = game.PlayedMoves.Select(m => m.Notation).ToList()

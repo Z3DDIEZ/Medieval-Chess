@@ -8,12 +8,12 @@ namespace MedievalChess.Domain.Enums;
 public static class CourtHelper
 {
     /// <summary>
-    /// King's Court: Files a-d (0-3)
-    /// Queen's Court: Files e-h (4-7)
+    /// Queen's Court: Files a-d (0-3) - Queen starts on d-file
+    /// King's Court: Files e-h (4-7) - King starts on e-file
     /// </summary>
     public static CourtType GetCourt(Position position)
     {
-        return position.File < 4 ? CourtType.KingsCourt : CourtType.QueensCourt;
+        return position.File < 4 ? CourtType.QueensCourt : CourtType.KingsCourt;
     }
 
     /// <summary>

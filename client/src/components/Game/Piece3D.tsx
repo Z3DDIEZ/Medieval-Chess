@@ -9,12 +9,16 @@ interface Piece3DProps {
 }
 
 // Helper to convert "e2" -> Vector3(x, 0, z)
+// Board orientation: White (rank 1-2) near camera, Black (rank 7-8) far
+// Files a-h go left to right (x: -3.5 to +3.5)
+// Ranks 1-8: rank 1 at z=+3.5 (near), rank 8 at z=-3.5 (far)
 const getVectorFromAlgebraic = (alg: string): [number, number, number] => {
     if (!alg || alg.length < 2) return [0, 0, 0];
     const file = alg.charCodeAt(0) - 97; // a=0, h=7
     const rank = parseInt(alg[1]) - 1;   // 1=0, 8=7
-    // Center board at 0,0. Each square is 1 unit.
-    return [file - 3.5, 0.1, rank - 3.5]; // y=0.1 base on board
+    // x: file 0->-3.5, file 7->+3.5
+    // z: rank 0 (1) -> +3.5, rank 7 (8) -> -3.5 (flipped for camera perspective)
+    return [file - 3.5, 0.1, 3.5 - rank];
 };
 
 // Create a lathe geometry from a profile (for rotationally symmetric pieces)

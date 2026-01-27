@@ -118,14 +118,17 @@ export const Board3D = ({ onPieceSelect }: Board3DProps) => {
     };
 
     // Helper: 0,0 -> "a1"
-    const toAlgebraic = (x: number, y: number) =>
-        `${String.fromCharCode(97 + x)}${y + 1}`;
+    const toAlgebraic = (file: number, rank: number) =>
+        `${String.fromCharCode(97 + file)}${rank + 1}`;
 
-    // Helper: "e4" -> [x, y]
+    // Helper: "e4" -> [x, z] in 3D space
+    // x: file (a=0 -> x=-3.5, h=7 -> x=+3.5)
+    // z: rank (1=0 -> z=+3.5, 8=7 -> z=-3.5) - flipped for camera perspective
     const fromAlgebraic = (alg: string): [number, number] => {
         const file = alg.charCodeAt(0) - 97;
         const rank = parseInt(alg[1]) - 1;
-        return [file, rank];
+        // Return [x, z] where z is flipped
+        return [file - 3.5, 3.5 - rank];
     };
 
     // Generate 8x8 checkerboard
@@ -153,10 +156,12 @@ export const Board3D = ({ onPieceSelect }: Board3DProps) => {
                 squareColor = isDark ? '#4a6b35' : '#7db35a'; // Green tint for hover
             }
 
+            // x position: file 0 -> -3.5, file 7 -> +3.5
+            // z position: rank 0 (1) -> +3.5, rank 7 (8) -> -3.5 (flipped)
             squares.push(
                 <mesh
                     key={alg}
-                    position={[x - 3.5, 0, y - 3.5]}
+                    position={[x - 3.5, 0, 3.5 - y]}
                     receiveShadow
                     onClick={(e) => {
                         e.stopPropagation();
@@ -175,7 +180,7 @@ export const Board3D = ({ onPieceSelect }: Board3DProps) => {
                 squares.push(
                     <mesh
                         key={`${alg}-dot`}
-                        position={[x - 3.5, 0.15, y - 3.5]}
+                        position={[x - 3.5, 0.15, 3.5 - y]}
                         onClick={(e) => {
                             e.stopPropagation();
                             handleSquareClick(alg);
@@ -208,7 +213,7 @@ export const Board3D = ({ onPieceSelect }: Board3DProps) => {
                 {game?.pieces.map((p, idx) => {
                     const isSelected = selectedPos === p.position;
                     const isLegalCapture = selectedPos && legalMoves.includes(p.position);
-                    const [px, py] = fromAlgebraic(p.position);
+                    const [px, pz] = fromAlgebraic(p.position);
 
                     return (
                         <group key={idx} onClick={(e) => handlePieceClick(p.position, e)}>
@@ -220,7 +225,7 @@ export const Board3D = ({ onPieceSelect }: Board3DProps) => {
 
                             {/* Legal capture ring */}
                             {isLegalCapture && !isSelected && (
-                                <mesh position={[px - 3.5, 0.12, py - 3.5]} rotation={[-Math.PI / 2, 0, 0]}>
+                                <mesh position={[px, 0.12, pz]} rotation={[-Math.PI / 2, 0, 0]}>
                                     <ringGeometry args={[0.38, 0.45, 32]} />
                                     <meshBasicMaterial color="#cc3333" transparent opacity={0.7} />
                                 </mesh>
@@ -228,7 +233,7 @@ export const Board3D = ({ onPieceSelect }: Board3DProps) => {
 
                             {/* Selection indicator */}
                             {isSelected && (
-                                <mesh position={[px - 3.5, 0.12, py - 3.5]} rotation={[-Math.PI / 2, 0, 0]}>
+                                <mesh position={[px, 0.12, pz]} rotation={[-Math.PI / 2, 0, 0]}>
                                     <ringGeometry args={[0.35, 0.42, 32]} />
                                     <meshBasicMaterial color="#ffd700" transparent opacity={0.8} />
                                 </mesh>
@@ -237,7 +242,7 @@ export const Board3D = ({ onPieceSelect }: Board3DProps) => {
                             {/* Info tooltip on selection */}
                             {isSelected && (
                                 <Html
-                                    position={[px - 3.5, 1.2, py - 3.5]}
+                                    position={[px, 1.2, pz]}
                                     center
                                     style={{ pointerEvents: 'none' }}
                                 >
@@ -275,9 +280,9 @@ export const Board3D = ({ onPieceSelect }: Board3DProps) => {
                 </Html>
             )}
 
-            {/* File labels (a-h) along the near edge (white's side) */}
+            {/* File labels (a-h) along the near edge (White's side, z=+4.5) */}
             {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((file, i) => (
-                <Html key={`file-${file}`} position={[i - 3.5, 0.15, -4.5]} center style={{ pointerEvents: 'none' }}>
+                <Html key={`file-${file}`} position={[i - 3.5, 0.15, 4.5]} center style={{ pointerEvents: 'none' }}>
                     <span style={{
                         color: '#c9a227',
                         fontSize: '14px',
@@ -293,8 +298,9 @@ export const Board3D = ({ onPieceSelect }: Board3DProps) => {
             ))}
 
             {/* Rank labels (1-8) along the left edge */}
+            {/* rank 1 -> z=+3.5, rank 8 -> z=-3.5 */}
             {[1, 2, 3, 4, 5, 6, 7, 8].map((rank) => (
-                <Html key={`rank-${rank}`} position={[-4.5, 0.15, rank - 4.5]} center style={{ pointerEvents: 'none' }}>
+                <Html key={`rank-${rank}`} position={[-4.5, 0.15, 3.5 - (rank - 1)]} center style={{ pointerEvents: 'none' }}>
                     <span style={{
                         color: '#c9a227',
                         fontSize: '14px',

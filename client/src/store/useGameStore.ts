@@ -2,6 +2,14 @@ import { create } from 'zustand';
 import axios from 'axios';
 import { HubConnectionBuilder } from '@microsoft/signalr';
 
+interface PieceAbility {
+    abilityDefinitionId: string;
+    currentCooldown: number;
+    maxCooldown: number;
+    upgradeTier: number;
+    isReady: boolean;
+}
+
 interface Piece {
     type: number; // Enum value
     color: number; // 0=White, 1=Black
@@ -9,6 +17,12 @@ interface Piece {
     loyalty: number;
     maxHP: number;
     currentHP: number;
+    // Medieval fields
+    level: number;
+    xp: number;
+    isDefecting: boolean;
+    court: string | null;
+    abilities: PieceAbility[];
 }
 
 interface GameState {

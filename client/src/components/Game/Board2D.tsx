@@ -134,6 +134,15 @@ const DraggablePiece = ({ piece, onSelect }: any) => {
 
     if (!PieceComponent) return null;
 
+    // Loyalty-based border color
+    const getLoyaltyBorder = (loyalty: number) => {
+        if (loyalty >= 80) return 'transparent';
+        if (loyalty >= 50) return 'rgba(139, 195, 74, 0.6)'; // Steady - light green
+        if (loyalty >= 30) return 'rgba(255, 152, 0, 0.8)'; // Wavering - orange
+        return 'rgba(244, 67, 54, 0.9)'; // Disloyal - red
+    };
+    const loyaltyBorder = getLoyaltyBorder(piece.loyalty);
+
     return (
         <div
             ref={(node: any) => { drag(node); }}
@@ -146,16 +155,60 @@ const DraggablePiece = ({ piece, onSelect }: any) => {
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                zIndex: 10
+                zIndex: 10,
+                position: 'relative',
+                borderRadius: '50%',
+                boxShadow: piece.isDefecting
+                    ? '0 0 12px 4px rgba(244, 67, 54, 0.8)'
+                    : loyaltyBorder !== 'transparent'
+                        ? `0 0 8px 2px ${loyaltyBorder}`
+                        : 'none'
             }}
         >
             <PieceComponent
                 style={{
                     width: '85%',
                     height: '85%',
-                    filter: 'drop-shadow(1px 4px 4px rgba(0,0,0,0.5))'
+                    filter: piece.isDefecting
+                        ? 'drop-shadow(1px 4px 4px rgba(244,67,54,0.7))'
+                        : 'drop-shadow(1px 4px 4px rgba(0,0,0,0.5))'
                 }}
             />
+
+            {/* Level Badge */}
+            {piece.level > 1 && (
+                <div style={{
+                    position: 'absolute',
+                    top: '-2px',
+                    right: '-2px',
+                    background: 'linear-gradient(135deg, #ffd700, #ffb300)',
+                    color: '#000',
+                    fontSize: '0.6em',
+                    fontWeight: 'bold',
+                    padding: '2px 4px',
+                    borderRadius: '4px',
+                    border: '1px solid #b38600',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                    zIndex: 20
+                }}>
+                    {piece.level}
+                </div>
+            )}
+
+            {/* Defection Warning Icon */}
+            {piece.isDefecting && (
+                <div style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    left: '-4px',
+                    fontSize: '0.8em',
+                    zIndex: 20
+                }}>
+                    ⚠️
+                </div>
+            )}
+
+            {/* HP Bar */}
             {piece.currentHP < piece.maxHP && (
                 <div style={{
                     position: 'absolute',

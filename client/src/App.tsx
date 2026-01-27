@@ -9,15 +9,6 @@ import { TurnBasedCamera } from './components/Game/TurnBasedCamera';
 import { useGameStore } from './store/useGameStore';
 import './App.css';
 
-interface SelectedPiece {
-  type: number;
-  color: number;
-  position: string;
-  loyalty: number;
-  maxHP: number;
-  currentHP: number;
-}
-
 function App() {
   const { fetchGame, createGame, connectHub, game } = useGameStore();
   const [viewMode, setViewMode] = useState<'3d' | '2d'>('3d');
@@ -40,8 +31,8 @@ function App() {
     initGame();
   }, []);
 
-  // Get the selected piece from game state
-  const selectedPiece: SelectedPiece | null = game && selectedPiecePos
+  // Get the selected piece from game state (now includes all Medieval fields)
+  const selectedPiece = game && selectedPiecePos
     ? game.pieces.find(p => p.position === selectedPiecePos) || null
     : null;
 
