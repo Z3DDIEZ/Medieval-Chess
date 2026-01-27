@@ -19,6 +19,10 @@ public abstract class Piece : AggregateRoot<Guid>
     public int MaxHP { get; protected set; }
     public int CurrentHP { get; protected set; }
     
+    // New Collections
+    public List<PieceAbility> Abilities { get; private set; } = new();
+    public List<ActiveEffect> ActiveEffects { get; private set; } = new();
+    
     public bool IsCaptured => Position == null;
 
     protected Piece(PlayerColor color, Position position)

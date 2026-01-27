@@ -22,25 +22,25 @@ public class LoyaltyManager
     {
         var pieces = _game.Board.Pieces.Where(p => !p.IsCaptured).ToList();
 
-        // 1. Identify Lords and Vassals
-        var queens = pieces.Where(p => p.Type == PieceType.Queen).ToList();
-        
-        // 2. Apply passive modifiers
         foreach (var piece in pieces)
         {
-            // +5 if adjacent to any Lord (Queen/King/Bishop/Rook) of same color
-            bool adjacentToLord = pieces.Any(lord => 
-                lord.Color == piece.Color && 
-                lord != piece &&
-                IsLord(lord.Type) &&
-                lord.Position.HasValue && piece.Position.HasValue &&
-                lord.Position.Value.IsAdjacentTo(piece.Position.Value)
-            );
+            // 1. Find Lord
+            var lord = GetLordOf(piece);
 
-            if (adjacentToLord)
+            // 2. Apply passive modifiers
+            if (lord != null)
             {
-                ModifyLoyalty(piece, 5);
+                // +5 if adjacent to YOUR Lord
+                bool adjacentToLord = lord.Position.HasValue && 
+                                      piece.Position.HasValue && 
+                                      lord.Position.Value.IsAdjacentTo(piece.Position.Value);
+                if (adjacentToLord)
+                {
+                    ModifyLoyalty(piece, 5);
+                }
             }
+            
+            // Note: "Piece takes damage without nearby allies" would be handled in TakeDamage event or here if we track damage state
         }
     }
 
@@ -50,57 +50,39 @@ public class LoyaltyManager
     public void OnPieceCaptured(Piece capturedPiece)
     {
         // If a Lord is captured, their vassals panic (-30 LV)
-        if (IsLord(capturedPiece.Type))
+        // We check if this piece IS a lord to anyone
+        var vassals = GetVassalsOf(capturedPiece);
+        foreach (var vassal in vassals)
         {
-            var vassals = GetVassalsFor(capturedPiece);
-            foreach (var vassal in vassals)
-            {
-                ModifyLoyalty(vassal, -30);
-            }
+            ModifyLoyalty(vassal, -30);
+            // In a full implementation, we might mark them as Orphaned here
         }
     }
 
     private void ModifyLoyalty(Piece piece, int amount)
     {
-        // Value Object logic is encapsulated, we need to create new one or update it
         int newValue = Math.Clamp(piece.Loyalty.Value + amount, 0, 100);
         piece.Loyalty = new LoyaltyValue(newValue);
+        
+        // Also update the relationship record if we want to persist it there
+        var relationship = _game.LoyaltyRelationships.FirstOrDefault(r => r.VassalId == piece.Id);
+        relationship?.AdjustLoyalty(amount);
     }
 
-    private bool IsLord(PieceType type) => type switch
+    private Piece? GetLordOf(Piece vassal)
     {
-        PieceType.King => true,
-        PieceType.Queen => true,
-        PieceType.Bishop => true,
-        PieceType.Rook => true,
-        _ => false
-    };
+        var rel = _game.LoyaltyRelationships.FirstOrDefault(r => r.VassalId == vassal.Id);
+        if (rel == null) return null;
+        return _game.Board.Pieces.FirstOrDefault(p => p.Id == rel.LordId);
+    }
 
-    /// <summary>
-    /// Returns the direct vassals of a Lord based on the Ruleset hierarchy.
-    /// </summary>
-    private IEnumerable<Piece> GetVassalsFor(Piece lord)
+    private IEnumerable<Piece> GetVassalsOf(Piece lord)
     {
-        var allPieces = _game.Board.Pieces.Where(p => !p.IsCaptured && p.Color == lord.Color).ToList();
-
-        switch (lord.Type)
-        {
-            case PieceType.King:
-                // King's vassal is Queen
-                return allPieces.Where(p => p.Type == PieceType.Queen);
+        var vassalIds = _game.LoyaltyRelationships
+            .Where(r => r.LordId == lord.Id)
+            .Select(r => r.VassalId)
+            .ToList();
             
-            case PieceType.Queen:
-                // Queen commands Bishops and Rooks
-                return allPieces.Where(p => p.Type == PieceType.Bishop || p.Type == PieceType.Rook);
-            
-            case PieceType.Bishop:
-            case PieceType.Rook:
-                // They command Knights and Pawns in their sector
-                // Simplified: All Pawns for now
-                return allPieces.Where(p => p.Type == PieceType.Pawn || p.Type == PieceType.Knight);
-                
-            default:
-                return Enumerable.Empty<Piece>();
-        }
+        return _game.Board.Pieces.Where(p => vassalIds.Contains(p.Id));
     }
 }

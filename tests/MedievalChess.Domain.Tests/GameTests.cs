@@ -22,7 +22,7 @@ public class GameTests
     public void ExecuteMove_ShouldSwitchTurn()
     {
         var game = Game.StartNew();
-        var engine = new Logic.EngineService();
+        var engine = new MedievalChess.Domain.Logic.EngineService();
         var pawnStart = new Position(4, 1); // e2
         var pawnTarget = new Position(4, 3); // e4
 

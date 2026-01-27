@@ -4,8 +4,8 @@
 
 | Attribute | Details |
 | :--- | :--- |
-| **Status** | 🚧 Phase 5: Movement & Interaction (In Progress) |
-| **Core Logic** | ✅ Implemented & Tested (DDD pattern) |
+| **Status** | 🚧 Phase 12: Medieval Logic (In Progress) |
+| **Core Logic** | ✅ Standard Chess + Medieval Foundations (27 tests) |
 | **API** | ✅ Running (ASP.NET Core 9 / MediatR) |
 | **Frontend** | ✅ 3D Board (React Three Fiber) |
 | **Docs** | [Architecture](docs/architecture-model.md) • [Ruleset](docs/ruleset-model.md) • [Security](docs/security-model.md) |
@@ -28,9 +28,10 @@ Medieval Chess re-imagines the classic game by enforcing the social structures o
 This project follows **Clean Architecture** and **Domain-Driven Design (DDD)** principles.
 
 ### 1. Core Domain (`src/MedievalChess.Domain`)
-*   **Pure C# 12**, zero configurations dependencies.
-*   **Entities**: `Game`, `Piece`, `Board`.
+*   **Pure C# 12**, zero external dependencies.
+*   **Entities**: `Game`, `Piece`, `Board`, `LoyaltyRelationship`, `ActiveEffect`, `PieceAbility`.
 *   **Value Objects**: `Position`, `LoyaltyValue`.
+*   **Services**: `LoyaltyManager`, `AbilityManager`, `EngineService`.
 
 ### 2. Application & API (`src/MedievalChess.Application`, `src/MedievalChess.Api`)
 *   **CQRS**: MediatR pattern (`CreateGameCommand`, `GetGameQuery`).
@@ -124,6 +125,16 @@ Open the URL shown (e.g., `http://localhost:5173`). The game will automatically 
 - [x] Board Flip Toggle (Switch between White/Black perspective in 2D mode)
 - [x] Coordinate Labels (File a-h, Rank 1-8 on board edges)
 - [x] Mode-Specific Controls (3D: camera toggles, 2D: flip toggle)
+
+### Phase 12: Medieval Logic Domain Layer 🚧
+- [x] Loyalty Relationship Entity & Manager
+- [x] Action Point (AP) System (5 AP/turn, 10 max)
+- [x] Ability & Effect Entities
+- [x] AbilityManager (Cooldowns, Effect Ticks)
+- [x] Unit Tests (LoyaltyManagerTests, AbilityManagerTests)
+- [ ] Ability Definitions & Activation
+- [ ] Court System (King's vs Queen's Court)
+- [ ] Defection Logic
 
 ---
 

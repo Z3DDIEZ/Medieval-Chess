@@ -60,12 +60,13 @@ The Game is the primary aggregate root, controlling all gameplay state and enfor
 
 **Navigation Properties:**
 - `Board` (Board entity): 1-to-1 relationship
-- `MoveHistory` (ICollection<Move>): All moves made (polymorphic)
+- `PlayedMoves` (IReadOnlyCollection<Move>): All moves made
+- `DrawOfferedBy` (PlayerColor?): For draw negotiation
 - `DomainEvents` (ICollection<DomainEvent>): Uncommitted events
 
 **Core Behaviors:**
 
-1. **ExecuteMove(MoveCommand) → Result<MoveOutcome>**
+1. **ExecuteMove(Position from, Position to, IEngineService engine) → void**
    - Validates turn ownership and AP availability
    - Delegates move legality to Piece entity
    - Executes move on Board
@@ -82,7 +83,7 @@ The Game is the primary aggregate root, controlling all gameplay state and enfor
    - Triggers cooldown and awards XP
    - Publishes AbilityActivatedEvent
 
-3. **EndTurn(playerId) → Result**
+3. **EndTurn(IEngineService engine) → void**
    - Applies passive healing to eligible pieces
    - Advances all cooldowns by 1 turn
    - Ticks active effects (damage over time, buffs)
@@ -207,8 +208,11 @@ The Game is the primary aggregate root, controlling all gameplay state and enfor
 - Board logic queries Pieces collection dynamically
 
 **Navigation Properties:**
-- `Pieces` (ICollection<Piece>): All pieces on board (alive and captured)
+- `Pieces` (IReadOnlyCollection<Piece>): All pieces on board (alive and captured)
 - Captured pieces have `IsCaptured = true` and `Position = null`
+- `EnPassantTarget` (Position?): Target square for en passant capture
+- `HalfMoveClock` (int): For 50-move rule
+- `CastlingRights` (bools): WhiteKingsideCastle, etc.
 
 **Core Behaviors:**
 

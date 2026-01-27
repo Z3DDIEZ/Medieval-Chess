@@ -12,10 +12,20 @@ public class Game : AggregateRoot<Guid>
     public GameStatus Status { get; private set; }
     public int TurnNumber { get; private set; }
     
+    // Action Points (Max 10)
+    public int WhiteAP { get; private set; }
+    public int BlackAP { get; private set; }
+    public const int MaxAP = 10;
+    public const int APPerTurn = 5;
+
     private readonly List<Move> _playedMoves = new();
     public IReadOnlyCollection<Move> PlayedMoves => _playedMoves.AsReadOnly();
 
     public PlayerColor? DrawOfferedBy { get; private set; }
+    
+    // Loyalty Relationships (Feudal Hierarchy)
+    private readonly List<LoyaltyRelationship> _loyaltyRelationships = new();
+    public IReadOnlyCollection<LoyaltyRelationship> LoyaltyRelationships => _loyaltyRelationships.AsReadOnly();
 
     private Game() 
     {
@@ -28,9 +38,12 @@ public class Game : AggregateRoot<Guid>
         {
             Id = Guid.NewGuid(),
             Board = Board.CreateStandardSetup(),
+
             CurrentTurn = PlayerColor.White,
             Status = GameStatus.InProgress,
-            TurnNumber = 1
+            TurnNumber = 1,
+            WhiteAP = 5, // Start with 5 AP
+            BlackAP = 5
         };
     }
 
@@ -157,16 +170,62 @@ public class Game : AggregateRoot<Guid>
         move.Notation = move.ToAlgebraicNotation();
         _playedMoves.Add(move);
 
+
+
+        // Deduct AP (Move costs 1 AP)
+        SpendAP(CurrentTurn, 1);
+
         EndTurn(engine);
+    }
+    
+    public void SpendAP(PlayerColor player, int amount)
+    {
+        if (player == PlayerColor.White)
+        {
+            if (WhiteAP < amount) throw new InvalidOperationException("Not enough AP");
+            WhiteAP -= amount;
+        }
+        else
+        {
+            if (BlackAP < amount) throw new InvalidOperationException("Not enough AP");
+            BlackAP -= amount;
+        }
+    }
+    
+    // Updated signature to include new managers would happen here, but for now we instantiate them or assume they are stateless/helper
+    // Ideally we'd pass them in, but to avoid large refactors we can instantiate them inside or Pass them via method injection.
+    // For now I'm instantiating them locally / using static logic if possible, OR pass them in.
+   
+    
+    
+    public void AddLoyaltyRelationship(LoyaltyRelationship relationship)
+    {
+        _loyaltyRelationships.Add(relationship);
     }
     
     private void EndTurn(Logic.IEngineService engine)
     {
+        // 1. Loyalty Updates
+        var loyaltyManager = new Logic.LoyaltyManager(this);
+        loyaltyManager.UpdateLoyalty();
+        
+        // 2. Ability/Effect Updates
+        var abilityManager = new Logic.AbilityManager(this);
+        abilityManager.AdvanceCooldowns();
+        abilityManager.TickEffects();
+
+        // 3. Switch Turn
         CurrentTurn = CurrentTurn == PlayerColor.White ? PlayerColor.Black : PlayerColor.White;
         if (CurrentTurn == PlayerColor.White)
         {
             TurnNumber++;
         }
+        
+        // 4. Grant AP
+        if (CurrentTurn == PlayerColor.White)
+            WhiteAP = Math.Min(MaxAP, WhiteAP + APPerTurn);
+        else
+            BlackAP = Math.Min(MaxAP, BlackAP + APPerTurn);
         
         // Set check/checkmate flags on the last move
         if (_playedMoves.Count > 0)

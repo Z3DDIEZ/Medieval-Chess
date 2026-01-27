@@ -43,7 +43,7 @@ graph TD
     Gateway --> API[ASP.NET Core API]
     
     subgraph "Application Layer"
-        API --> CommandHandlers[Command Handlers (MediatR)]
+        API --> CommandHandlers["Command Handlers - MediatR"]
         API --> QueryHandlers[Query Handlers]
         Hub[SignalR Hub] <-->|Push Events| User
     end
@@ -60,6 +60,7 @@ graph TD
         Repo --> DB[(PostgreSQL)]
         Auth[Identity Service] --> DB
     end
+
 ```
 
 ## 4. Key Components
