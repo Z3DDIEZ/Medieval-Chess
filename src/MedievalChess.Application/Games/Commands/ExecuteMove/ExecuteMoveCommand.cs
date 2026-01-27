@@ -9,10 +9,12 @@ public record ExecuteMoveCommand(Guid GameId, string From, string To) : IRequest
 public class ExecuteMoveCommandHandler : IRequestHandler<ExecuteMoveCommand, bool>
 {
     private readonly IGameRepository _repository;
+    private readonly Domain.Logic.IEngineService _engine;
 
-    public ExecuteMoveCommandHandler(IGameRepository repository)
+    public ExecuteMoveCommandHandler(IGameRepository repository, Domain.Logic.IEngineService engine)
     {
         _repository = repository;
+        _engine = engine;
     }
 
     public Task<bool> Handle(ExecuteMoveCommand request, CancellationToken cancellationToken)
@@ -26,7 +28,14 @@ public class ExecuteMoveCommandHandler : IRequestHandler<ExecuteMoveCommand, boo
         var fromPos = Position.FromAlgebraic(request.From);
         var toPos = Position.FromAlgebraic(request.To);
 
-        game.ExecuteMove(fromPos, toPos);
+        try 
+        {
+            game.ExecuteMove(fromPos, toPos, _engine);
+        }
+        catch 
+        {
+            return Task.FromResult(false);
+        }
         
         // In a real app with EF Core, we would call _repository.SaveChangesAsync() or similar here.
         // Since it's in-memory and reference-based, the state is already "saved".

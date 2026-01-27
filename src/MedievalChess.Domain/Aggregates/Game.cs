@@ -29,42 +29,56 @@ public class Game : AggregateRoot<Guid>
         };
     }
 
-    public void ExecuteMove(Position from, Position to)
+    public void ExecuteMove(Position from, Position to, Logic.IEngineService engine)
     {
         if (Status != GameStatus.InProgress)
             throw new InvalidOperationException("Game is not in progress");
 
-        var piece = Board.GetPieceAt(from);
-        if (piece == null)
-            throw new ArgumentException("No piece at source position");
-
-        if (piece.Color != CurrentTurn)
-            throw new InvalidOperationException("Not your turn");
-
-        // Basic validation logic placeholder
-        // TODO: Integrate Engine Validation here
+        // 1. Validate Legal Move (Engine)
+        if (!engine.IsMoveLegal(Board, from, to, CurrentTurn))
+        {
+            throw new InvalidOperationException("Illegal move");
+        }
+        
+        var piece = Board.GetPieceAt(from); 
+        // Note: piece is guaranteed !null and Correct Color by IsMoveLegal, but strict null check is fine
+        if (piece == null) throw new InvalidOperationException("System Error: Piece vanished during validation");
 
         var targetPiece = Board.GetPieceAt(to);
         if (targetPiece != null)
         {
-            if (targetPiece.Color == CurrentTurn)
-                throw new InvalidOperationException("Cannot capture own piece");
-            
             // Capture logic
-            targetPiece.TakeDamage(999); // Instant capture for Phase 1
+            targetPiece.TakeDamage(999); 
             
-            // Trigger Loyalty Panic
             var loyaltyManager = new Logic.LoyaltyManager(this);
             loyaltyManager.OnPieceCaptured(targetPiece);
         }
 
         piece.MoveTo(to);
         
-        // Update Loyalty for everyone (passive bonuses)
         var loyaltyUpdate = new Logic.LoyaltyManager(this);
         loyaltyUpdate.UpdateLoyalty();
 
-        EndTurn();
+        EndTurn(engine);
+    }
+    
+    private void EndTurn(Logic.IEngineService engine)
+    {
+        CurrentTurn = CurrentTurn == PlayerColor.White ? PlayerColor.Black : PlayerColor.White;
+        if (CurrentTurn == PlayerColor.White)
+        {
+            TurnNumber++;
+        }
+        
+        // Update Game Status (Checkmate/Stalemate)
+        if (engine.IsCheckmate(Board, CurrentTurn))
+        {
+            Status = GameStatus.Checkmate;
+        }
+        else if (engine.IsStalemate(Board, CurrentTurn))
+        {
+            Status = GameStatus.Stalemate;
+        }
     }
 
     public void Resign(PlayerColor player)

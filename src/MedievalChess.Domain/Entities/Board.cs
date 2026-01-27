@@ -47,4 +47,28 @@ public class Board
     {
         return _pieces.FirstOrDefault(p => !p.IsCaptured && p.Position == position);
     }
+
+    public bool IsOccupied(Position position) => GetPieceAt(position) != null;
+
+    public bool IsOccupiedByEnemy(Position position, PlayerColor myColor)
+    {
+        var piece = GetPieceAt(position);
+        return piece != null && piece.Color != myColor;
+    }
+
+    public bool IsOccupiedByFriend(Position position, PlayerColor myColor)
+    {
+        var piece = GetPieceAt(position);
+        return piece != null && piece.Color == myColor;
+    }
+
+    public IEnumerable<Piece> GetActivePieces(PlayerColor color)
+    {
+        return _pieces.Where(p => !p.IsCaptured && p.Color == color);
+    }
+    
+    public Piece? GetKing(PlayerColor color)
+    {
+        return _pieces.FirstOrDefault(p => !p.IsCaptured && p.Color == color && p.Type == PieceType.King);
+    }
 }

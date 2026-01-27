@@ -22,22 +22,19 @@ public class GameTests
     public void ExecuteMove_ShouldSwitchTurn()
     {
         var game = Game.StartNew();
+        var engine = new Logic.EngineService();
         var pawnStart = new Position(4, 1); // e2
         var pawnTarget = new Position(4, 3); // e4
 
-        game.ExecuteMove(pawnStart, pawnTarget);
+        game.ExecuteMove(pawnStart, pawnTarget, engine);
 
         Assert.Equal(PlayerColor.Black, game.CurrentTurn);
-        // Turn number only increments after black plays (Move 1 is White+Black)
-        // Or traditionally, "Turn 1" covers both. 
-        // Our logic: "CurrentTurn == White ? TurnNumber++" on EndTurn.
-        // Post White move -> Turn is Black. TurnNumber still 1.
         Assert.Equal(1, game.TurnNumber); 
         
         // Execute Black move
         var blackPawn = new Position(4, 6); // e7
         var blackTarget = new Position(4, 4); // e5
-        game.ExecuteMove(blackPawn, blackTarget);
+        game.ExecuteMove(blackPawn, blackTarget, engine);
 
         Assert.Equal(PlayerColor.White, game.CurrentTurn);
         Assert.Equal(2, game.TurnNumber);
