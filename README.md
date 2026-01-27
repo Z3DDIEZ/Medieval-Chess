@@ -4,10 +4,11 @@
 
 | Attribute | Details |
 | :--- | :--- |
-| **Status** | 🚧 Phase 12: Medieval Logic (In Progress) |
+| **Status** | 🚧 Phase 14: Ruleset Analysis (In Progress) |
 | **Core Logic** | ✅ Standard Chess + Medieval Foundations (27 tests) |
 | **API** | ✅ Running (ASP.NET Core 9 / MediatR) |
-| **Frontend** | ✅ 3D Board (React Three Fiber) |
+| **Frontend** | ✅ 3D Board (React Three Fiber + GLTF Models) |
+| **License** | Custom (Educational Use w/ Attribution) |
 | **Docs** | [Architecture](docs/architecture-model.md) • [Ruleset](docs/ruleset-model.md) • [Security](docs/security-model.md) |
 
 ## ⚔️ Project Overview
@@ -135,6 +136,19 @@ Open the URL shown (e.g., `http://localhost:5173`). The game will automatically 
 - [x] Ability Definitions & Activation
 - [x] Court System (King's vs Queen's Court)
 - [x] Defection Logic
+
+### Phase 13: Frontend Piece Details & 3D Enhancements ✅
+- [x] API: Medieval piece data (XP, Level, Abilities, Court, Defection)
+- [x] PieceInfoPanel: Court, Abilities, Defection warnings
+- [x] 2D Board: Loyalty borders, Level badges, Defection icons
+- [x] 3D GLTF Models: Low Poly Chess Pieces (CC BY 4.0, Steva_)
+- [x] 3D Scene: Tournament-style lighting, Board frame, Dark environment
+- [x] Project License: Custom (Educational Use w/ Attribution)
+- [x] Attribution file for third-party assets
+
+### Phase 14: Ruleset Implementation 🚧
+- [ ] Deep analysis of `docs/ruleset-model.md`
+- [ ] Implement remaining Medieval mechanics
 
 ---
 

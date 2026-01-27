@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Stars, Environment } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import { Board3D } from './components/Game/Board3D';
 import { Board2D } from './components/Game/Board2D';
 import { Sidebar } from './components/Game/Sidebar';
 import { PieceInfoPanel } from './components/Game/PieceInfoPanel';
 import { TurnBasedCamera } from './components/Game/TurnBasedCamera';
+import { SceneLighting, BoardFrame, GroundPlane } from './components/Game/SceneEnvironment';
 import { useGameStore } from './store/useGameStore';
 import './App.css';
 
@@ -57,9 +58,9 @@ function App() {
       />
 
       {/* Main Viewport */}
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', backgroundColor: '#1e1e1e' }}>
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', backgroundColor: '#000000' }}>
         {viewMode === '3d' ? (
-          <Canvas shadows camera={{ position: [0, 8, 6], fov: 50 }}>
+          <Canvas shadows camera={{ position: [0, 8, 6], fov: 50 }} gl={{ antialias: true }} onCreated={({ gl }) => gl.setClearColor('#050505')}>
             {/* Turn-based camera controller */}
             <TurnBasedCamera
               currentTurn={currentTurn}
@@ -78,12 +79,10 @@ function App() {
               maxDistance={15}
             />
 
-            <ambientLight intensity={0.5} />
-            <spotLight position={[10, 15, 10]} angle={0.3} penumbra={1} castShadow intensity={100} />
-            <pointLight position={[-10, -10, -10]} intensity={0.5} />
-
-            <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-            <Environment preset="night" />
+            {/* Tournament-style Scene Environment */}
+            <SceneLighting />
+            <BoardFrame />
+            <GroundPlane />
 
             <Board3D onPieceSelect={setSelectedPiecePos} />
           </Canvas>
