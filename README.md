@@ -72,7 +72,7 @@ Open the URL shown (e.g., `http://localhost:5173`). The game will automatically 
 ## 🗺️ Roadmap & Progress
 **Current Status:** Phase 14 (Ruleset Implementation).
 
-For the full detailed project roadmap and phase tracking, please see [docs/roadmap.md](docs/roadmap.md).
+For the full detailed project roadmap and phase tracking, please see [Roadmap](docs/roadmap.md).
 
 ---
 
