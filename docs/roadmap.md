@@ -77,6 +77,14 @@
 - [x] Project License: Custom (Educational Use w/ Attribution)
 - [x] Attribution file for third-party assets
 
-### Phase 14: Ruleset Implementation 🚧
-- [ ] Deep analysis of `docs/ruleset-model.md`
-- [ ] Implement remaining Medieval mechanics
+### Phase 14: AI Integration & Narrative System ✅
+- [x] AI: Minimax Engine with Alpha-Beta Pruning
+- [x] AI: EngineGameState (High-Performance Struct)
+- [x] AI: MedievalEvaluator (Court/Loyalty Heuristics)
+- [x] Narrative: NarrativeEngineService (Flavor Text Generation)
+- [x] Narrative: Integration with Combat & Events
+
+### Phase 15: Frontend Integration 🚧
+- [ ] Connect Narrative to UI (Battle Log Component)
+- [ ] Visualize AI Thinking (Optional)
+- [ ] Polish Attrition Mode UI (Bounce/Combat Feedback)
