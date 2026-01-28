@@ -1,4 +1,5 @@
 using MedievalChess.Domain.Aggregates;
+using MedievalChess.Domain.Entities;
 using MedievalChess.Domain.Primitives;
 
 namespace MedievalChess.Engine

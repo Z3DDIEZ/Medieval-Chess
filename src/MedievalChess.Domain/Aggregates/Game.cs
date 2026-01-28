@@ -169,28 +169,33 @@ public class Game : AggregateRoot<Guid>
         {
             piece.MoveTo(to);
             piece.MarkAsMoved();
-        }
-        
-        // Pawn promotion
-        if (piece.Type == PieceType.Pawn && Entities.Pieces.Pawn.IsPromotionRank(to.Rank, piece.Color))
-        {
-            // Default to Queen if not specified
-            var promoteToType = promotionPiece ?? PieceType.Queen;
-            move.PromotionPiece = promoteToType;
-            
-            // Actually replace the pawn with the promoted piece
-            piece.Capture(); // Remove the pawn from the board
-            
-            Piece promotedPiece = promoteToType switch
+
+            // Pawn promotion (Only if actually moved)
+            if (piece.Type == PieceType.Pawn && Entities.Pieces.Pawn.IsPromotionRank(to.Rank, piece.Color))
             {
-                PieceType.Queen => new Entities.Pieces.Queen(piece.Color, to),
-                PieceType.Rook => new Entities.Pieces.Rook(piece.Color, to),
-                PieceType.Bishop => new Entities.Pieces.Bishop(piece.Color, to),
-                PieceType.Knight => new Entities.Pieces.Knight(piece.Color, to),
-                _ => new Entities.Pieces.Queen(piece.Color, to)
-            };
-            promotedPiece.MarkAsMoved();
-            Board.AddPiece(promotedPiece);
+                // Strict Domain: Requires explicit promotion choice.
+                if (!promotionPiece.HasValue)
+                {
+                    throw new InvalidOperationException("Promotion piece must be specified for this move.");
+                }
+
+                var promoteToType = promotionPiece.Value;
+                move.PromotionPiece = promoteToType;
+                
+                // Actually replace the pawn with the promoted piece
+                piece.Capture(); // Remove the pawn from the board
+                
+                Piece promotedPiece = promoteToType switch
+                {
+                    PieceType.Queen => new Entities.Pieces.Queen(piece.Color, to),
+                    PieceType.Rook => new Entities.Pieces.Rook(piece.Color, to),
+                    PieceType.Bishop => new Entities.Pieces.Bishop(piece.Color, to),
+                    PieceType.Knight => new Entities.Pieces.Knight(piece.Color, to),
+                    _ => new Entities.Pieces.Queen(piece.Color, to)
+                };
+                promotedPiece.MarkAsMoved();
+                Board.AddPiece(promotedPiece);
+            }
         }
         
         // --- Update Board State ---

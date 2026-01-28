@@ -4,10 +4,10 @@
 
 | Attribute | Details |
 | :--- | :--- |
-| **Status** | 🚧 Phase 14: Ruleset Analysis (In Progress) |
-| **Core Logic** | ✅ Standard Chess + Medieval Foundations (27 tests) |
-| **API** | ✅ Running (ASP.NET Core 9 / MediatR) |
-| **Frontend** | ✅ 3D Board (React Three Fiber + GLTF Models) |
+| **Status** | 🚧 Phase 15: Frontend Integration (In Progress) |
+| **Core Logic** | ✅ Standard + Medieval + AI Engines (Minimax/Greedy) |
+| **API** | ✅ ASP.NET Core 9 / SignalR / AI Integration |
+| **Frontend** | ✅ 3D/2D Hybrid Board + Narrative Log + AI Visualization |
 | **License** | Custom (Educational Use w/ Attribution) |
 | **Docs** | [Architecture](docs/architecture-model.md) • [Ruleset](docs/ruleset-model.md) • [Security](docs/security-model.md) |
 
@@ -18,6 +18,7 @@ Medieval Chess re-imagines the classic game by enforcing the social structures o
 - **Feudal Loyalty System**: Dynamic chains of command. Capturing a Lord (Queen/Bishop/Rook) causes their Vassals to waver or defect.
 - **RPG Progression**: Pieces gain XP, level up, and unlock ability trees (e.g., Knights learn "Charge", Bishops learn "Sanctify").
 - **Asymmetric War**: "King's Court" (Defensive) vs "Queen's Court" (Offensive) bonuses.
+- **AI Opponents**: Integrated Minimax Bot with "Thinking" visualization.
 - **Game Modes**:
   - **Standard**: Instant capture, focus on positioning.
   - **Attrition**: HP-based combat (activates late-game).
@@ -38,6 +39,7 @@ This project follows **Clean Architecture** and **Domain-Driven Design (DDD)** p
 *   **CQRS**: MediatR pattern (`CreateGameCommand`, `GetGameQuery`).
 *   **REST API**: Exposes game state management.
 *   **Infrastructure**: In-Memory persistence (Repository Pattern).
+*   **Dependencies**: References `MedievalChess.Engine` for AI logic.
 
 ### 3. Frontend Client (`client/`)
 *   **React 18 + Vite**: Fast SPA framework.
@@ -70,7 +72,7 @@ Open the URL shown (e.g., `http://localhost:5173`). The game will automatically 
 ---
 
 ## 🗺️ Roadmap & Progress
-**Current Status:** Phase 14 (Ruleset Implementation).
+**Current Status:** Phase 15 (Frontend Integration).
 
 For the full detailed project roadmap and phase tracking, please see [Roadmap](docs/roadmap.md).
 
@@ -83,6 +85,7 @@ For the full detailed project roadmap and phase tracking, please see [Roadmap](d
 | POST | `/api/Games` | Create a new game |
 | GET | `/api/Games/{id}` | Get game state (pieces, moves, check status) |
 | POST | `/api/Games/{id}/moves` | Execute a move (with optional promotion piece) |
+| POST | `/api/Games/{id}/ai-move` | Request AI to calculate and execute a move |
 | GET | `/api/Games/{id}/legal-moves/{from}` | Get legal destinations for a piece |
 | POST | `/api/Games/{id}/resign` | Resign the game |
 | POST | `/api/Games/{id}/offer-draw` | Offer a draw |

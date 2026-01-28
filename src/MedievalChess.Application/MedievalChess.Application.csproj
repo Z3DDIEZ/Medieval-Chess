@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MedievalChess.Domain\MedievalChess.Domain.csproj" />
+    <ProjectReference Include="..\MedievalChess.Engine\MedievalChess.Engine.csproj" />
   </ItemGroup>
 
   <ItemGroup>

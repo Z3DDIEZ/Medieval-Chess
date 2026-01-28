@@ -84,7 +84,8 @@
 - [x] Narrative: NarrativeEngineService (Flavor Text Generation)
 - [x] Narrative: Integration with Combat & Events
 
-### Phase 15: Frontend Integration 🚧
-- [ ] Connect Narrative to UI (Battle Log Component)
-- [ ] Visualize AI Thinking (Optional)
-- [ ] Polish Attrition Mode UI (Bounce/Combat Feedback)
+### Phase 15: Frontend Integration ✅
+- [x] Connect Narrative to UI (Battle Log Component - Medieval Style)
+- [x] Visualize AI Thinking (AI Status Overlay & Trigger)
+- [x] Polish Attrition Mode UI (Bounce/Combat Feedback)
+- [x] Logic Fixes (Pawn Promotion, Check Detection, AI Endpoint)

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using MedievalChess.Domain.Aggregates;
+using MedievalChess.Domain.Entities;
 using MedievalChess.Domain.Logic;
 using MedievalChess.Domain.Primitives;
 

@@ -50,6 +50,23 @@ public class GamesController : ControllerBase
         }
     }
 
+    [HttpPost("{id}/ai-move")]
+    public async Task<ActionResult> AIMove(Guid id)
+    {
+        try
+        {
+            var result = await _mediator.Send(new MedievalChess.Application.Games.Commands.AIMove.AIMoveCommand(id));
+            if (!result) return BadRequest("AI failed to move (No moves or Game Over)");
+            
+            await _hubContext.Clients.Group(id.ToString()).SendAsync("GameStateUpdated", id);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     [HttpPost("{id}/resign")]
     public async Task<ActionResult> Resign(Guid id, [FromBody] PlayerColorRequest request)
     {

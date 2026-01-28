@@ -314,12 +314,19 @@ export const Board2D = ({ onPieceSelect, flipped = false }: Board2DProps) => {
                 getLegalMoves(game.id, alg);
             } else {
                 // Check if this is a promotion move
+                const isLegal = legalMoves.includes(alg); // Check validation first!
                 const promotionColor = isPromotionMove(selectedPos, alg);
-                if (promotionColor !== null) {
+
+                if (isLegal && promotionColor !== null) {
                     // Show promotion picker instead of executing immediately
                     setPendingPromotion({ from: selectedPos, to: alg, color: promotionColor });
-                } else {
+                } else if (isLegal) {
                     executeMove(game.id, selectedPos, alg);
+                    updateSelection(null);
+                    clearLegalMoves();
+                } else {
+                    // Illegal move - ignore or provide feedback
+                    // We just clear selection to be clean
                     updateSelection(null);
                     clearLegalMoves();
                 }

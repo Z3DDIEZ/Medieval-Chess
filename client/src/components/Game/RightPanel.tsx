@@ -28,7 +28,7 @@ export const RightPanel = ({
     selectedPiece,
     onClosePieceInfo
 }: RightPanelProps) => {
-    const { game, loading, error, resignGame, offerDraw } = useGameStore();
+    const { game, loading, error, resignGame, offerDraw, isAIThinking, makeAIMove } = useGameStore();
 
     if (loading) return <div className="game-sidebar right-panel">Loading Realm...</div>;
     if (error) return <div className="game-sidebar right-panel">Error: {error}</div>;
@@ -216,6 +216,21 @@ export const RightPanel = ({
                         Resign
                     </button>
                 </div>
+
+                {/* AI Controls (Debug/Demo) */}
+                <button
+                    className="btn-medieval"
+                    disabled={isAIThinking || isGameOver}
+                    style={{
+                        fontSize: '0.8em',
+                        padding: '8px',
+                        background: isAIThinking ? '#444' : 'linear-gradient(180deg, #2c4c5c 0%, #1b2e3e 100%)',
+                        cursor: isAIThinking ? 'not-allowed' : 'pointer'
+                    }}
+                    onClick={() => { if (game) makeAIMove(game.id); }}
+                >
+                    {isAIThinking ? '🤖 AI Thinking...' : '🤖 Play AI Move'}
+                </button>
             </div>
         </aside>
     );

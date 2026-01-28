@@ -1,73 +1,35 @@
-# React + TypeScript + Vite
+# Medieval Chess - Frontend Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React Three Fiber application visualizing a feudal chess variant.
 
-Currently, two official plugins are available:
+## 🌟 Key Features
+- **Hybrid Visualization**: Toggle between an immersive **3D View** (GLTF models) and a tactical **2D Map** (SVG).
+- **Interactive Board**: Drag-and-drop movement, click-to-select, and legal move highlighting.
+- **Narrative Battle Log**: A customized "Battle Dialog" that generates flavor text for combat interactions.
+- **AI Integration**: Visual feedback for AI "Thinking" states and manual AI trigger controls.
+- **Medieval Aesthetics**: Custom UI themes (`BoardTheme.css`), parchment textures, and immersive camera controls.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🛠️ Tech Stack
+- **Framework**: React 18 + Vite (TypeScript)
+- **3D Engine**: React Three Fiber (Three.js)
+- **State Management**: Zustand
+- **Real-time**: SignalR (via `@microsoft/signalr`)
+- **Styling**: Vanilla CSS + CSS Modules
 
-## React Compiler
+## 🚀 Development
+### Prerequisites
+- Node.js 20+
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Setup
+1. `npm install`
+2. `npm run dev`
 
-## Expanding the ESLint configuration
+Game runs on `http://localhost:5173`.
+Must be run alongside the Backend API (`dotnet run`).
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 📁 Project Structure
+- `src/components/Game/Board3D.tsx`: Main 3D scene (Lights, Camera, Board).
+- `src/components/Game/Board2D.tsx`: SVG-based tactical view.
+- `src/components/Game/BattleDialog.tsx`: Scrolling narrative log.
+- `src/components/Game/RightPanel.tsx`: Sidebar with Move History and AI Controls.
+- `src/store/useGameStore.ts`: Central state (Game object, SignalR, API calls).
