@@ -174,14 +174,15 @@ public class SpecialMovesTests
     {        // Fool's Mate: 1.f3 e5 2.g4 Qh4#
         var game = Game.StartNew();
         var rng = new Mocks.TestRNGService();
+        var narrative = new Mocks.TestNarrativeService();
         
         // 1. f3 e5
-        game.ExecuteMove(Position.FromAlgebraic("f2"), Position.FromAlgebraic("f3"), _engine, rng);
-        game.ExecuteMove(Position.FromAlgebraic("e7"), Position.FromAlgebraic("e5"), _engine, rng);
+        game.ExecuteMove(Position.FromAlgebraic("f2"), Position.FromAlgebraic("f3"), _engine, rng, narrative);
+        game.ExecuteMove(Position.FromAlgebraic("e7"), Position.FromAlgebraic("e5"), _engine, rng, narrative);
         
         // 2. g4 Qh4#
-        game.ExecuteMove(Position.FromAlgebraic("g2"), Position.FromAlgebraic("g4"), _engine, rng);
-        game.ExecuteMove(Position.FromAlgebraic("d8"), Position.FromAlgebraic("h4"), _engine, rng);
+        game.ExecuteMove(Position.FromAlgebraic("g2"), Position.FromAlgebraic("g4"), _engine, rng, narrative);
+        game.ExecuteMove(Position.FromAlgebraic("d8"), Position.FromAlgebraic("h4"), _engine, rng, narrative);
         
         // Assert
         Assert.Equal(GameStatus.Checkmate, game.Status);

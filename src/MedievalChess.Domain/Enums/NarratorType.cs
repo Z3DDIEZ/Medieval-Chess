@@ -6,6 +6,7 @@ namespace MedievalChess.Domain.Enums
         WhiteKing = 1,
         BlackKing = 2,
         General = 3,        // Generic commander voice
-        PieceSelf = 4       // The piece performing the action
+        PieceSelf = 4,       // The piece performing the action
+        Battle = 5          // Generic battle narration
     }
 }

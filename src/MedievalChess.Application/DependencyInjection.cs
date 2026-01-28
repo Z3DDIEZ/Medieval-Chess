@@ -8,6 +8,7 @@ public static class DependencyInjection
     {
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
         services.AddScoped<MedievalChess.Domain.Logic.IEngineService, MedievalChess.Domain.Logic.EngineService>();
+        services.AddScoped<MedievalChess.Domain.Common.INarrativeEngineService, MedievalChess.Application.Narrative.NarrativeEngineService>();
         return services;
     }
 }

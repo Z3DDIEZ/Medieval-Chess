@@ -24,10 +24,11 @@ public class GameTests
         var game = Game.StartNew();
         var engine = new MedievalChess.Domain.Logic.EngineService();
         var rng = new Mocks.TestRNGService();
+        var narrative = new Mocks.TestNarrativeService();
         var pawnStart = new Position(4, 1); // e2
         var pawnTarget = new Position(4, 3); // e4
 
-        game.ExecuteMove(pawnStart, pawnTarget, engine, rng);
+        game.ExecuteMove(pawnStart, pawnTarget, engine, rng, narrative);
 
         Assert.Equal(PlayerColor.Black, game.CurrentTurn);
         Assert.Equal(1, game.TurnNumber); 
@@ -35,7 +36,7 @@ public class GameTests
         // Execute Black move
         var blackPawn = new Position(4, 6); // e7
         var blackTarget = new Position(4, 4); // e5
-        game.ExecuteMove(blackPawn, blackTarget, engine, rng);
+        game.ExecuteMove(blackPawn, blackTarget, engine, rng, narrative);
 
         Assert.Equal(PlayerColor.White, game.CurrentTurn);
         Assert.Equal(2, game.TurnNumber);

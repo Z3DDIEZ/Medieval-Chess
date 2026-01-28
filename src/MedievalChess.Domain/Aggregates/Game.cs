@@ -66,7 +66,7 @@ public class Game : AggregateRoot<Guid>
         return game;
     }
 
-    public void ExecuteMove(Position from, Position to, Logic.IEngineService engine, IRNGService rngService, PieceType? promotionPiece = null)
+    public void ExecuteMove(Position from, Position to, Logic.IEngineService engine, IRNGService rngService, INarrativeEngineService narrativeService, PieceType? promotionPiece = null)
     {
         if (Status != GameStatus.InProgress)
             throw new InvalidOperationException("Game is not in progress");
@@ -136,10 +136,9 @@ public class Game : AggregateRoot<Guid>
             move.DamageDealt = result.DamageDealt;
 
             // Narrative Generation
-            var narrativeManager = new Logic.NarrativeManager(rngService);
             // Glancing logic: if armor reduced more than 50% of damage? or loosely based on ratio
             bool isGlancing = result.ArmorReduced > result.BaseDamage * 0.5; 
-            var entry = narrativeManager.GenerateCombatEntry(this, piece, targetPiece, result.DamageDealt, result.IsCritical, isGlancing);
+            var entry = narrativeService.GenerateCombatNarrative(TurnNumber, piece, targetPiece, result.DamageDealt, result.IsCritical, isGlancing);
             GameNarrative.AddEntry(entry);
             
             if (targetPiece.IsCaptured)
