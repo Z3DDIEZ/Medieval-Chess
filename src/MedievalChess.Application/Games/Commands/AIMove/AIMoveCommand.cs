@@ -1,6 +1,7 @@
 using MediatR;
 using MedievalChess.Application.Common.Interfaces;
 using MedievalChess.Domain.Enums;
+using MedievalChess.Domain.Entities; // Added correct namespace
 using MedievalChess.Domain.Primitives;
 
 namespace MedievalChess.Application.Games.Commands.AIMove;
@@ -14,12 +15,6 @@ public class AIMoveCommandHandler : IRequestHandler<AIMoveCommand, bool>
     private readonly Domain.Common.IRNGService _rngService;
     private readonly Domain.Common.INarrativeEngineService _narrativeService;
     
-    // We need the AI Bot logic. Usually injected as a service.
-    // Since MinimaxBot is in Engine project and instantiated, we might need an interface or instantiate it.
-    // For now, let's instantiate directly or assume interface.
-    // But MinimaxBot needs engine logic.
-    // Let's assume we can use the ENGINE project's namespace.
-
     public AIMoveCommandHandler(IGameRepository repository, 
                                 Domain.Logic.IEngineService engineService, 
                                 Domain.Common.IRNGService rngService,
@@ -36,34 +31,47 @@ public class AIMoveCommandHandler : IRequestHandler<AIMoveCommand, bool>
         var game = _repository.GetById(request.GameId);
         if (game == null || game.Status != GameStatus.InProgress) return Task.FromResult(false);
 
-        // Instantiate Bot
-        // Depth 3 is standard for medieval chess complexity
-        var bot = new MedievalChess.Engine.Bots.MinimaxBot(3); 
+        // Strategy: Try Minimax -> If Fail, Try Random -> If Fail, Return False
+        Move? move = null;
         
-        // Calculate Best Move
-        // Note: MinimaxBot.CalculateBestMove expects the Domain Game object
-        var bestMove = bot.CalculateBestMove(game, 1000);
+        try
+        {
+            var bot = new MedievalChess.Engine.Bots.MinimaxBot(2);
+            move = bot.CalculateBestMove(game, 2000);
+        }
+        catch (Exception)
+        {
+            // Minimax Failed (Log somewhere in real app). Fallback to Random.
+        }
+
+        if (move == null)
+        {
+             // Fallback
+             var randomBot = new MedievalChess.Engine.Bots.RandomBot(_engineService);
+             try 
+             {
+                move = randomBot.CalculateBestMove(game, 500);
+             }
+             catch
+             {
+                 return Task.FromResult(false); // Even random failed (likely no moves)
+             }
+        }
         
-        if (bestMove != null)
+        if (move != null)
         {
             try 
             {
-                // Execute Logic
-                // Note: bestMove contains From/To/Promotion
-                // AI Default Logic: If Engine suggests a move that results in promotion but logic didn't specify piece (usually Queen in engine), we set it.
-                // Engines usually just verify "To Square" is rank 0/7 for pawn.
-                
-                var promotionPiece = bestMove.PromotionPiece;
-                if (!promotionPiece.HasValue && bestMove.Piece.Type == PieceType.Pawn) // Check if pawn
+                var promotionPiece = move.PromotionPiece;
+                if (!promotionPiece.HasValue && move.Piece.Type == PieceType.Pawn)
                 {
-                     // Check rank
-                     if (bestMove.To.Rank == 0 || bestMove.To.Rank == 7)
+                     if (move.To.Rank == 0 || move.To.Rank == 7)
                      {
                          promotionPiece = PieceType.Queen;
                      }
                 }
                 
-                game.ExecuteMove(bestMove.From, bestMove.To, _engineService, _rngService, _narrativeService, promotionPiece);
+                game.ExecuteMove(move.From, move.To, _engineService, _rngService, _narrativeService, promotionPiece);
                 return Task.FromResult(true);
             }
             catch

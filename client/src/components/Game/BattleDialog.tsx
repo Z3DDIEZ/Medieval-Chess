@@ -51,7 +51,7 @@ export const BattleDialog: React.FC<BattleDialogProps> = ({ entries }) => {
             {/* Scroll/Parchment Header Decoration (Optional CSS later) */}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {entries.map((entry) => (
+                {entries.slice(-20).map((entry) => (
                     <div key={entry.id} style={{
                         display: 'flex',
                         alignItems: 'baseline',

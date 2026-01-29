@@ -24,20 +24,23 @@ public class CombatManager
         int seed = _game.CombatSeed + _game.TurnNumber + attacker.Id.GetHashCode() + defender.Id.GetHashCode();
         var rng = new Random(seed);
 
-        // 3. Base Calculation
-        int baseDamage = attackerValue * 2;
+        // 3. Base Calculation (Buffed 2x -> 4x)
+        int baseDamage = attackerValue * 4;
 
         // 4. Level Modifier
-        // (Level/10 + 1) -> Level 10 gives 2x damage. Level 1 gives 1.1x
-        double levelMultiplier = (attacker.Level / 10.0) + 1.0;
+        // (Level/5 + 1) -> Level 10 gives 3x damage.
+        double levelMultiplier = (attacker.Level / 5.0) + 1.0;
 
-        // 5. RNG Modifier (0.8 to 1.2)
+        // 5. Fatigue Scaling (New)
+        // 1% extra damage per turn to force end game.
+        double fatigueMultiplier = 1.0 + (_game.TurnNumber * 0.01);
+
+        // 6. RNG Modifier (0.8 to 1.2)
         double rngModifier = 0.8 + (rng.NextDouble() * 0.4);
 
-        double modifiedDamage = baseDamage * levelMultiplier * rngModifier;
+        double modifiedDamage = baseDamage * levelMultiplier * fatigueMultiplier * rngModifier;
 
-        // 6. Critical Hit (15% chance)
-        // Bonus 5% if Devoted (Loyalty > 90)
+        // 7. Critical Hit (15% + Loyalty Bonus)
         double critChance = 0.15;
         if (attacker.Loyalty.Value >= 90) critChance += 0.05;
 
@@ -47,12 +50,24 @@ public class CombatManager
             modifiedDamage *= 1.5;
         }
 
-        // 7. Armor Reduction
+        // 8. Armor Reduction
         // Armor * (0.5 to 1.0)
         double armorRng = 0.5 + (rng.NextDouble() * 0.5);
         double defenseReduction = defender.Armor * armorRng;
 
-        // 8. Final Damage (Min 1)
+        // 9. Execution Mechanic (New)
+        // If target is < 20% HP, execute them (Massive Damage)
+        bool isExecute = defender.MaxHP > 0 && 
+                         (double)defender.CurrentHP / defender.MaxHP < 0.20 &&
+                         modifiedDamage > defenseReduction; // Must deal at least some damage to execute
+
+        if (isExecute)
+        {
+            modifiedDamage = defender.CurrentHP + defender.Armor + 100; // Overkill
+            isCritical = true; // Visual flare
+        }
+
+        // 10. Final Damage (Min 1)
         int finalDamage = (int)Math.Max(1, modifiedDamage - defenseReduction);
 
         return new CombatResult
@@ -60,7 +75,8 @@ public class CombatManager
             DamageDealt = finalDamage,
             IsCritical = isCritical,
             BaseDamage = baseDamage,
-            ArmorReduced = (int)defenseReduction
+            ArmorReduced = (int)defenseReduction,
+            IsExecute = isExecute
         };
     }
 
@@ -86,4 +102,5 @@ public class CombatResult
     public bool IsCritical { get; set; }
     public int BaseDamage { get; set; }
     public int ArmorReduced { get; set; }
+    public bool IsExecute { get; set; }
 }

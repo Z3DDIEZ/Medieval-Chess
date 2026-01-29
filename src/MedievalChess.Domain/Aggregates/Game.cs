@@ -77,6 +77,9 @@ public class Game : AggregateRoot<Guid>
             throw new InvalidOperationException("Illegal move");
         }
         
+        // 2. Validate AP (Transaction start)
+        SpendAP(CurrentTurn, 1);
+
         var piece = Board.GetPieceAt(from); 
         if (piece == null) throw new InvalidOperationException("System Error: Piece vanished during validation");
 
@@ -246,9 +249,14 @@ public class Game : AggregateRoot<Guid>
 
 
 
-        // Deduct AP (Move costs 1 AP)
-        SpendAP(CurrentTurn, 1);
-
+        // Deduct AP (Move costs 1 AP) - Do this LAST to ensure we don't charge for failed moves? 
+        // NO. If we do it last, and it fails, the move has already happened!
+        // We must check first, but maybe deduct last? 
+        // Actually, we should Check first.
+        // Or better: Spend first. If other things fail, we might need to refund?
+        // But validation (IsMoveLegal) is non-mutating.
+        // So: Validate -> Spend -> Mutate.
+        
         EndTurn(engine);
     }
     

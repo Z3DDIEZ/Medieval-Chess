@@ -71,10 +71,11 @@ interface GameStore {
     clearLegalMoves: () => void;
     // AI
     isAIThinking: boolean;
+    lastAIMoveTime?: number;
     makeAIMove: (id: string) => Promise<void>;
 }
 
-export const useGameStore = create<GameStore>((set) => ({
+export const useGameStore = create<GameStore>((set, get) => ({
     game: null,
     loading: false,
     error: null,
@@ -174,15 +175,23 @@ export const useGameStore = create<GameStore>((set) => ({
         set({ legalMoves: [] });
     },
     makeAIMove: async (id: string) => {
+        const { isAIThinking, lastAIMoveTime } = get();
+        const now = Date.now();
+
+        // Guard: Busy or Cooldown (2 seconds)
+        if (isAIThinking || (lastAIMoveTime && now - lastAIMoveTime < 2000)) {
+            return;
+        }
+
         set({ isAIThinking: true });
         try {
             await axios.post(`/api/Games/${id}/ai-move`, {});
             // Check status - usually SignalR handles refresh, but force it
             const response = await axios.get(`/api/Games/${id}`);
-            set({ game: response.data, isAIThinking: false });
+            set({ game: response.data, isAIThinking: false, lastAIMoveTime: Date.now() });
         } catch (err: any) {
             console.error(err);
-            set({ error: "AI failed to move", isAIThinking: false });
+            set({ error: "AI failed to move", isAIThinking: false, lastAIMoveTime: Date.now() });
         }
     }
 }));
