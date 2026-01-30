@@ -73,6 +73,8 @@ interface GameStore {
     isAIThinking: boolean;
     lastAIMoveTime?: number;
     makeAIMove: (id: string) => Promise<void>;
+    // Connection
+    connection: any | null;
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -119,14 +121,32 @@ export const useGameStore = create<GameStore>((set, get) => ({
             set({ error: err.response?.data || "Move failed" });
         }
     },
+    connection: null as HubConnectionBuilder | any | null, // Store connection instance
+
+    // ... existing actions ...
+
     connectHub: async (gameId: string) => {
+        const { connection: existingConnection } = get();
+
+        // Clean up existing connection if it exists
+        if (existingConnection) {
+            try {
+                await existingConnection.stop();
+                console.log("Stopped existing SignalR connection");
+            } catch (err) {
+                console.warn("Failed to stop existing connection:", err);
+            }
+        }
+
         const connection = new HubConnectionBuilder()
             .withUrl("/gameHub")
             .withAutomaticReconnect()
             .build();
 
         connection.on("GameStateUpdated", async (id: string) => {
-            if (id === gameId) {
+            const currentGame = get().game;
+            // Only update if the event matches the current game
+            if (currentGame && id === currentGame.id) {
                 // Refresh game state
                 const response = await axios.get(`/api/Games/${id}`);
                 set({ game: response.data });
@@ -136,7 +156,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         try {
             await connection.start();
             await connection.invoke("JoinGame", gameId);
-            console.log("Connected to GameHub");
+            set({ connection }); // Save connection to store
+            console.log(`Connected to GameHub for game ${gameId}`);
         } catch (err) {
             console.error("SignalR Connection Error: ", err);
         }

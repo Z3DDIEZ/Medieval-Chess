@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Piece3D } from './Piece3D';
 import { Html } from '@react-three/drei';
 import { useGameStore } from '../../store/useGameStore';
@@ -15,16 +15,11 @@ interface PendingPromotion {
 }
 
 export const Board3D = ({ onPieceSelect }: Board3DProps) => {
-    const { game, executeMove, connectHub, legalMoves, getLegalMoves, clearLegalMoves } = useGameStore();
+    const { game, executeMove, legalMoves, getLegalMoves, clearLegalMoves } = useGameStore();
     const [selectedPos, setSelectedPos] = useState<string | null>(null);
     const [hoveredSquare, setHoveredSquare] = useState<string | null>(null);
     const [pendingPromotion, setPendingPromotion] = useState<PendingPromotion | null>(null);
 
-    useEffect(() => {
-        if (game?.id) {
-            connectHub(game.id);
-        }
-    }, [game?.id, connectHub]);
 
     // Notify parent when selection changes
     const updateSelection = (pos: string | null) => {
