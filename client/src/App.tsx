@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { Board3D } from './components/Game/Board3D';
@@ -21,14 +21,33 @@ function App() {
   const [cameraAnimating, setCameraAnimating] = useState(false); // Track if camera is rotating
   const [boardFlipped, setBoardFlipped] = useState(false); // Flip board perspective
 
+  // Use a ref to prevent double-initialization in React Strict Mode which causes race conditions
+  const initializedRef = useRef(false);
+
   useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
     const initGame = async () => {
-      // For now, auto-create game if none exists (simple logic from previous iteration)
-      // In production this would probably check URL params or a lobby
-      const newGameId = await createGame();
-      if (newGameId) {
-        await fetchGame(newGameId);
-        connectHub(newGameId);
+      // Check for existing game ID in URL
+      const params = new URLSearchParams(window.location.search);
+      let gameId = params.get('gameId');
+
+      if (gameId) {
+        console.log("Loading existing game:", gameId);
+        await fetchGame(gameId);
+        connectHub(gameId);
+      } else {
+        console.log("Creating new game...");
+        const newGameId = await createGame();
+        if (newGameId) {
+          // Update URL without reload so refresh keeps the game
+          const newUrl = `${window.location.pathname}?gameId=${newGameId}`;
+          window.history.pushState({ path: newUrl }, '', newUrl);
+
+          await fetchGame(newGameId);
+          connectHub(newGameId);
+        }
       }
     };
     initGame();

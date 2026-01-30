@@ -81,6 +81,12 @@ public class Move
         if (IsCheckmate) sb.Append('#');
         else if (IsCheck) sb.Append('+');
 
+        // Attrition Bounce Indicator
+        if (IsAttackBounce)
+        {
+            sb.Append('*'); // Asterisk indicates a hit that didn't kill/move
+        }
+
         return sb.ToString();
     }
 

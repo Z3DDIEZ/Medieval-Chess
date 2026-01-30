@@ -28,11 +28,23 @@ export const RightPanel = ({
     selectedPiece,
     onClosePieceInfo
 }: RightPanelProps) => {
-    const { game, loading, error, resignGame, offerDraw, isAIThinking, makeAIMove } = useGameStore();
+    const { game, loading, error, resignGame, offerDraw, isAIThinking, makeAIMove, createGame, fetchGame, connectHub } = useGameStore();
 
     if (loading) return <div className="game-sidebar right-panel">Loading Realm...</div>;
     if (error) return <div className="game-sidebar right-panel">Error: {error}</div>;
     if (!game) return <div className="game-sidebar right-panel">No active game</div>;
+
+    const handleNewGame = async () => {
+        if (!window.confirm("Start a new game?")) return;
+
+        const newId = await createGame();
+        if (newId) {
+            const newUrl = `${window.location.pathname}?gameId=${newId}`;
+            window.history.pushState({ path: newUrl }, '', newUrl);
+            await fetchGame(newId);
+            connectHub(newId);
+        }
+    };
 
     const isWhiteTurn = game.currentTurn === 0;
 
@@ -147,15 +159,7 @@ export const RightPanel = ({
                                 Back to History
                             </button>
                         </div>
-                        {/* Embedding PieceInfoPanel content - we might need to refactor PieceInfoPanel to be purely content 
-                            or just wrap it. Since PieceInfoPanel has its own styles, we'll try to use it 
-                            but we need to make sure its "fixed" positioning doesn't conflict. 
-                            Actually, we should modify PieceInfoPanel to support an "embedded" mode.
-                            For now, let's pass a prop or just use it as is and override styles via CSS if needed, 
-                            but better to just modify PieceInfoPanel.tsx first? 
-                            
-                            Let's assume we will use a modified PieceInfoPanel that accepts `embedded={true}`.
-                        */}
+                        {/* Embedding PieceInfoPanel content */}
                         <PieceInfoPanel piece={selectedPiece} onClose={onClosePieceInfo} embedded={true} />
                     </div>
                 ) : (
@@ -208,29 +212,41 @@ export const RightPanel = ({
                     Switch to {viewMode === '3d' ? '2D Map' : '3D View'}
                 </button>
 
-                <div style={{ display: 'flex', gap: '5px' }}>
-                    <button className="btn-medieval" style={{ flex: 1, fontSize: '0.8em', padding: '8px' }} onClick={() => { if (game && window.confirm("Offer a draw?")) offerDraw(game.id, game.currentTurn); }}>
-                        Offer Draw
+                {!isGameOver ? (
+                    <div style={{ display: 'flex', gap: '5px' }}>
+                        <button className="btn-medieval" style={{ flex: 1, fontSize: '0.8em', padding: '8px' }} onClick={() => { if (game && window.confirm("Offer a draw?")) offerDraw(game.id, game.currentTurn); }}>
+                            Offer Draw
+                        </button>
+                        <button className="btn-medieval" style={{ flex: 1, fontSize: '0.8em', padding: '8px', background: 'linear-gradient(180deg, #5c2c2c 0%, #3e1b1b 100%)' }} onClick={() => { if (game && window.confirm("Resign?")) resignGame(game.id, game.currentTurn); }}>
+                            Resign
+                        </button>
+                    </div>
+                ) : (
+                    <button
+                        className="btn-medieval"
+                        style={{ fontSize: '1em', padding: '12px', background: 'linear-gradient(180deg, #2c5c2c 0%, #1b3e1b 100%)', border: '1px solid #4CAF50' }}
+                        onClick={handleNewGame}
+                    >
+                        ⚔️ Start New Game
                     </button>
-                    <button className="btn-medieval" style={{ flex: 1, fontSize: '0.8em', padding: '8px', background: 'linear-gradient(180deg, #5c2c2c 0%, #3e1b1b 100%)' }} onClick={() => { if (game && window.confirm("Resign?")) resignGame(game.id, game.currentTurn); }}>
-                        Resign
-                    </button>
-                </div>
+                )}
 
-                {/* AI Controls (Debug/Demo) */}
-                <button
-                    className="btn-medieval"
-                    disabled={isAIThinking || isGameOver}
-                    style={{
-                        fontSize: '0.8em',
-                        padding: '8px',
-                        background: isAIThinking ? '#444' : 'linear-gradient(180deg, #2c4c5c 0%, #1b2e3e 100%)',
-                        cursor: isAIThinking ? 'not-allowed' : 'pointer'
-                    }}
-                    onClick={() => { if (game) makeAIMove(game.id); }}
-                >
-                    {isAIThinking ? '🤖 AI Thinking...' : '🤖 Play AI Move'}
-                </button>
+                {/* AI Controls */}
+                {!isGameOver && (
+                    <button
+                        className="btn-medieval"
+                        disabled={isAIThinking}
+                        style={{
+                            fontSize: '0.8em',
+                            padding: '8px',
+                            background: isAIThinking ? '#444' : 'linear-gradient(180deg, #2c4c5c 0%, #1b2e3e 100%)',
+                            cursor: isAIThinking ? 'not-allowed' : 'pointer'
+                        }}
+                        onClick={() => { if (game) makeAIMove(game.id); }}
+                    >
+                        {isAIThinking ? '🤖 AI Thinking...' : '🤖 Play AI Move'}
+                    </button>
+                )}
             </div>
         </aside>
     );

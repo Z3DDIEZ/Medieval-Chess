@@ -7,7 +7,7 @@
 | **Status** | 🚧 Phase 15: Frontend Integration (In Progress) |
 | **Core Logic** | ✅ Standard + Medieval + AI Engines (Minimax/Greedy) |
 | **API** | ✅ ASP.NET Core 9 / SignalR / AI Integration |
-| **Frontend** | ✅ 3D/2D Hybrid Board + Narrative Log + AI Visualization |
+| **Frontend** | ✅ 3D/2D Hybrid Board + Rich Narrative Log + AI Visualization |
 | **License** | Custom (Educational Use w/ Attribution) |
 | **Docs** | [Architecture](docs/architecture-model.md) • [Ruleset](docs/ruleset-model.md) • [Security](docs/security-model.md) |
 
