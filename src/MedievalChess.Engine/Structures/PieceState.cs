@@ -18,6 +18,7 @@ namespace MedievalChess.Engine.Structures
         // RPG Stats
         public short CurrentHP;
         public short MaxHP;
+        public short Armor;
         public byte Loyalty;        // 0-100
         public byte Level;
         public int XP;

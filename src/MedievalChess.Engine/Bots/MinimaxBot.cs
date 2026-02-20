@@ -134,30 +134,89 @@ namespace MedievalChess.Engine.Bots
             ulong oldBit = 1UL << piece.SquareIndex;
             if (piece.Color == 0) next.WhiteOcc &= ~oldBit; else next.BlackOcc &= ~oldBit;
 
-            // Handle Capture
+            // Handle Capture / Combat
             if (move.IsCapture)
             {
-                // The victim is at move.ToSquare
                 byte victimIdx = move.TargetIndex; 
-                // Safety: Verify victimIdx matches board?
-                // Trust generator.
-                
                 ref var victim = ref next.Pieces[victimIdx];
-                victim.IsCaptured = true;
-                victim.SquareIndex = 255;
-                
-                // Remove victim bit
-                ulong victimBit = 1UL << move.ToSquare;
-                if (victim.Color == 0) next.WhiteOcc &= ~victimBit; else next.BlackOcc &= ~victimBit;
-            }
 
-            // Place on new square
-            piece.SquareIndex = move.ToSquare;
-            piece.HasMoved = true;
-            next.BoardSquares[move.ToSquare] = move.FromIndex;
-            
-            ulong newBit = 1UL << move.ToSquare;
-            if (piece.Color == 0) next.WhiteOcc |= newBit; else next.BlackOcc |= newBit;
+                if (next.IsAttritionMode)
+                {
+                    // Calculate expected damage based on type
+                    int baseDamage = piece.Type switch
+                    {
+                        0 => 60,  // Pawn
+                        1 => 120, // Knight
+                        2 => 100, // Bishop
+                        3 => 150, // Rook
+                        4 => 200, // Queen
+                        5 => 80,  // King
+                        _ => 50
+                    };
+
+                    int damageAfterArmor = Math.Max(0, baseDamage - victim.Armor);
+                    
+                    // Note: We don't simulate RNG for crits or glancing blows in the Minimax search 
+                    // to keep the branching factor and node evaluation deterministic and fast.
+
+                    victim.CurrentHP -= (short)damageAfterArmor;
+
+                    if (victim.CurrentHP <= 0)
+                    {
+                        // Victim is dead
+                        victim.IsCaptured = true;
+                        victim.SquareIndex = 255;
+                        
+                        ulong victimBit = 1UL << move.ToSquare;
+                        if (victim.Color == 0) next.WhiteOcc &= ~victimBit; else next.BlackOcc &= ~victimBit;
+                        
+                        // Attacker moves into square
+                        piece.SquareIndex = move.ToSquare;
+                        piece.HasMoved = true;
+                        next.BoardSquares[move.ToSquare] = move.FromIndex;
+                        
+                        ulong newBit = 1UL << move.ToSquare;
+                        if (piece.Color == 0) next.WhiteOcc |= newBit; else next.BlackOcc |= newBit;
+                    }
+                    else
+                    {
+                        // Attack Bounce: Defender survives, attacker stays in original square
+                        // Restore attacker to old square
+                        next.BoardSquares[piece.SquareIndex] = move.FromIndex;
+                        ulong oldBitRestored = 1UL << piece.SquareIndex;
+                        if (piece.Color == 0) next.WhiteOcc |= oldBitRestored; else next.BlackOcc |= oldBitRestored;
+                        
+                        piece.HasMoved = true; // Still counts as an action
+                    }
+                }
+                else
+                {
+                    // Standard Chess 1-Hit Kill
+                    victim.IsCaptured = true;
+                    victim.SquareIndex = 255;
+                    
+                    ulong victimBit = 1UL << move.ToSquare;
+                    if (victim.Color == 0) next.WhiteOcc &= ~victimBit; else next.BlackOcc &= ~victimBit;
+
+                    // Place on new square
+                    piece.SquareIndex = move.ToSquare;
+                    piece.HasMoved = true;
+                    next.BoardSquares[move.ToSquare] = move.FromIndex;
+                    
+                    ulong newBit = 1UL << move.ToSquare;
+                    if (piece.Color == 0) next.WhiteOcc |= newBit; else next.BlackOcc |= newBit;
+                }
+            }
+            else
+            {
+                // Normal Move
+                piece.SquareIndex = move.ToSquare;
+                piece.HasMoved = true;
+                next.BoardSquares[move.ToSquare] = move.FromIndex;
+                
+                ulong newBit = 1UL << move.ToSquare;
+                if (piece.Color == 0) next.WhiteOcc |= newBit; else next.BlackOcc |= newBit;
+            }
             
             // Switch Turn
             next.CurrentTurn = next.CurrentTurn == PlayerColor.White ? PlayerColor.Black : PlayerColor.White;

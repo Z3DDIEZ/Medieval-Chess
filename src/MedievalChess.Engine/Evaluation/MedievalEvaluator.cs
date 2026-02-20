@@ -27,8 +27,10 @@ namespace MedievalChess.Engine.Evaluation
             
             // 1. Material (Medieval Weighted)
             int score = 0;
-            int whiteScore = 0;
-            int blackScore = 0;
+            
+            // Value AP (e.g. 20 centipawns per AP)
+            int whiteScore = state.WhiteAP * 20;
+            int blackScore = state.BlackAP * 20;
 
             for (int i = 0; i < state.Pieces.Length; i++)
             {

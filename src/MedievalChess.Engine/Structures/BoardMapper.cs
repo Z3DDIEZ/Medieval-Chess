@@ -21,6 +21,7 @@ namespace MedievalChess.Engine.Structures
             state.CurrentTurn = game.CurrentTurn;
             state.WhiteAP = (byte)game.WhiteAP;
             state.BlackAP = (byte)game.BlackAP;
+            state.IsAttritionMode = game.IsAttritionMode;
             
             for (int i = 0; i < pieces.Length; i++)
             {
@@ -51,6 +52,7 @@ namespace MedievalChess.Engine.Structures
 
                 ps.CurrentHP = (short)p.CurrentHP;
                 ps.MaxHP = (short)p.MaxHP;
+                ps.Armor = (short)p.Armor;
                 ps.Loyalty = (byte)p.Loyalty.Value;
                 ps.Level = (byte)p.Level;
                 ps.XP = p.XP;
