@@ -5,4 +5,5 @@ namespace MedievalChess.Application.Games.Commands.SpendXP;
 
 public record SpendXPCommand(
     Guid GameId,
-    string SourceAlgebraic) : IRequest<bool>;
+    string SourceAlgebraic,
+    string AbilityType) : IRequest<bool>;

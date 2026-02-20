@@ -1,5 +1,6 @@
 using MediatR;
 using MedievalChess.Application.Common.Interfaces;
+using MedievalChess.Domain.Enums;
 using MedievalChess.Domain.Primitives;
 
 namespace MedievalChess.Application.Games.Commands.SpendXP;
@@ -25,7 +26,10 @@ public class SpendXPCommandHandler : IRequestHandler<SpendXPCommand, bool>
             var piece = game.Board.GetPieceAt(sourcePos);
             if (piece == null) return Task.FromResult(false);
 
-            game.UpgradePieceAbility(piece);
+            if (!Enum.TryParse<AbilityType>(request.AbilityType, out var abilityType))
+                return Task.FromResult(false);
+
+            game.UpgradePieceAbility(piece, abilityType);
         }
         catch
         {

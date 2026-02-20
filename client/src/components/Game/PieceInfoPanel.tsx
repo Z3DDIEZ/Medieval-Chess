@@ -4,10 +4,28 @@ import "./BoardTheme.css";
 
 interface PieceAbility {
   abilityDefinitionId: string;
+  abilityType: string;
   currentCooldown: number;
   maxCooldown: number;
   upgradeTier: number;
   isReady: boolean;
+  name: string;
+  description: string;
+  apCost: number;
+  requiresTarget: boolean;
+  range: number;
+}
+
+interface CatalogAbility {
+  abilityType: string;
+  name: string;
+  description: string;
+  apCost: number;
+  xpRequired: number;
+  tier: string;
+  requiresTarget: boolean;
+  range: number;
+  isUnlocked: boolean;
 }
 
 interface Piece {
@@ -23,6 +41,7 @@ interface Piece {
   isDefecting: boolean;
   court: string | null;
   abilities: PieceAbility[];
+  abilityCatalog?: CatalogAbility[];
 }
 
 interface PieceInfoPanelProps {
@@ -56,6 +75,13 @@ const PIECE_DESCRIPTIONS: { [key: number]: string } = {
   3: "The siege tower. Moves horizontally or vertically across any number of squares.",
   4: "The most powerful piece. Combines the movement of both Rook and Bishop.",
   5: "The monarch. Limited to one square in any direction, but the game is lost if captured.",
+};
+
+const TIER_COLORS: { [key: string]: string } = {
+  Basic: "#4caf50",
+  Upgrade1: "#2196f3",
+  Upgrade2: "#9c27b0",
+  Upgrade3: "#ff9800",
 };
 
 export const PieceInfoPanel = ({
@@ -119,8 +145,6 @@ export const PieceInfoPanel = ({
 
   // XP needed for next level (Level * 100)
   const xpForNextLevel = piece.level * 100;
-  const canUpgrade =
-    piece.xp >= xpForNextLevel && game?.currentTurn === piece.color;
   const xpPercent = Math.min(
     100,
     xpForNextLevel > 0 ? (piece.xp / xpForNextLevel) * 100 : 0,
@@ -134,6 +158,12 @@ export const PieceInfoPanel = ({
     return { label: "Disloyal", color: "#f44336" };
   };
   const loyaltyStatus = getLoyaltyStatus(piece.loyalty);
+
+  // Ability catalog: unlockable abilities that haven't been unlocked yet
+  const isOwnPiece = game?.currentTurn === piece.color;
+  const lockedAbilities = (piece.abilityCatalog ?? []).filter(
+    (ab) => !ab.isUnlocked && ab.xpRequired > 0,
+  );
 
   const containerStyle = embedded
     ? {
@@ -257,7 +287,7 @@ export const PieceInfoPanel = ({
             fontSize: "0.85em",
           }}
         >
-          ⚠️ DEFECTION IMMINENT
+          DEFECTION IMMINENT
         </div>
       )}
 
@@ -272,9 +302,7 @@ export const PieceInfoPanel = ({
                 color: piece.court === "KingsCourt" ? "#4fc3f7" : "#ba68c8",
               }}
             >
-              {piece.court === "KingsCourt"
-                ? "👑 King's Court"
-                : "♛ Queen's Court"}
+              {piece.court === "KingsCourt" ? "King's Court" : "Queen's Court"}
             </span>
           </div>
         )}
@@ -307,10 +335,7 @@ export const PieceInfoPanel = ({
               {piece.xp}/{xpForNextLevel} XP
             </span>
           </div>
-          <div
-            className="stat-bar-container"
-            style={{ width: "100%", marginBottom: canUpgrade ? "8px" : "0" }}
-          >
+          <div className="stat-bar-container" style={{ width: "100%" }}>
             <div
               className="stat-bar"
               style={{
@@ -319,28 +344,6 @@ export const PieceInfoPanel = ({
               }}
             />
           </div>
-          {canUpgrade && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (game) upgradePiece(game.id, piece.position);
-              }}
-              style={{
-                background: "#ffd700",
-                color: "#000",
-                border: "1px solid #c9a227",
-                padding: "8px",
-                borderRadius: "4px",
-                width: "100%",
-                fontWeight: "bold",
-                cursor: "pointer",
-                boxShadow: "0 0 10px rgba(255, 215, 0, 0.4)",
-                animation: "pulse 2s infinite",
-              }}
-            >
-              ⭐ Promote to Level {piece.level + 1}! ⭐
-            </button>
-          )}
         </div>
 
         {/* HP Bar */}
@@ -382,7 +385,7 @@ export const PieceInfoPanel = ({
           <p>{description}</p>
         </div>
 
-        {/* Abilities Section */}
+        {/* Unlocked Abilities Section */}
         <div className="piece-abilities">
           <div className="ability-header">Abilities</div>
           {piece.abilities && piece.abilities.length > 0 ? (
@@ -411,16 +414,41 @@ export const PieceInfoPanel = ({
                     }}
                   >
                     <span style={{ fontWeight: "bold", fontSize: "0.9em" }}>
-                      Tier {ability.upgradeTier + 1} Ability
+                      {ability.name}
                     </span>
-                    {!ability.isReady && (
+                    <span style={{ fontSize: "0.75em", color: "#aaa" }}>
+                      {ability.apCost} AP
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "0.8em",
+                      color: "#999",
+                      marginTop: "2px",
+                    }}
+                  >
+                    {ability.description}
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginTop: "4px",
+                    }}
+                  >
+                    {!ability.isReady ? (
                       <span style={{ color: "#ff9800", fontSize: "0.8em" }}>
                         CD: {ability.currentCooldown}/{ability.maxCooldown}
                       </span>
-                    )}
-                    {ability.isReady && (
+                    ) : (
                       <span style={{ color: "#4caf50", fontSize: "0.8em" }}>
                         READY
+                      </span>
+                    )}
+                    {ability.requiresTarget && (
+                      <span style={{ color: "#64b5f6", fontSize: "0.75em" }}>
+                        Range: {ability.range}
                       </span>
                     )}
                   </div>
@@ -433,6 +461,106 @@ export const PieceInfoPanel = ({
             </div>
           )}
         </div>
+
+        {/* Ability Catalog — Unlockable Abilities */}
+        {isOwnPiece && lockedAbilities.length > 0 && (
+          <div className="piece-abilities" style={{ marginTop: "12px" }}>
+            <div className="ability-header">Ability Catalog</div>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "6px" }}
+            >
+              {lockedAbilities.map((ab, idx) => {
+                const canAfford = piece.xp >= ab.xpRequired;
+                const tierColor = TIER_COLORS[ab.tier] ?? "#888";
+
+                return (
+                  <div
+                    key={idx}
+                    style={{
+                      background: "rgba(50, 50, 60, 0.6)",
+                      padding: "8px",
+                      borderRadius: "4px",
+                      borderLeft: `3px solid ${tierColor}`,
+                      opacity: canAfford ? 1 : 0.6,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div>
+                        <span
+                          style={{ fontWeight: "bold", fontSize: "0.85em" }}
+                        >
+                          {ab.name}
+                        </span>
+                        <span
+                          style={{
+                            marginLeft: "6px",
+                            fontSize: "0.7em",
+                            color: tierColor,
+                            textTransform: "capitalize",
+                          }}
+                        >
+                          {ab.tier.replace("Upgrade", "Tier ")}
+                        </span>
+                      </div>
+                      <span
+                        style={{
+                          fontSize: "0.75em",
+                          color: canAfford ? "#ffd700" : "#666",
+                        }}
+                      >
+                        {ab.xpRequired} XP
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "0.78em",
+                        color: "#999",
+                        marginTop: "2px",
+                      }}
+                    >
+                      {ab.description}
+                    </div>
+                    {canAfford && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (game)
+                            upgradePiece(
+                              game.id,
+                              piece.position,
+                              ab.abilityType,
+                            );
+                        }}
+                        style={{
+                          marginTop: "6px",
+                          width: "100%",
+                          background:
+                            "linear-gradient(135deg, #ffd700, #c9a227)",
+                          color: "#000",
+                          border: "none",
+                          padding: "6px 10px",
+                          borderRadius: "4px",
+                          fontWeight: "bold",
+                          fontSize: "0.8em",
+                          cursor: "pointer",
+                          boxShadow: "0 0 8px rgba(255, 215, 0, 0.3)",
+                        }}
+                      >
+                        Unlock {ab.name}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

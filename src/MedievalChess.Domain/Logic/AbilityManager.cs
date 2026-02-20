@@ -164,10 +164,23 @@ public class AbilityManager
         }
     }
 
-    private static Guid GetAbilityDefinitionId(AbilityType type)
+    public static Guid GetAbilityDefinitionId(AbilityType type)
     {
         // Use a deterministic GUID based on ability type for simplicity
         return new Guid((int)type, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    }
+
+    /// <summary>
+    /// Reverse-resolves a deterministic GUID back to an AbilityType.
+    /// </summary>
+    public static AbilityType? ResolveAbilityType(Guid definitionId)
+    {
+        foreach (AbilityType type in Enum.GetValues<AbilityType>())
+        {
+            if (GetAbilityDefinitionId(type) == definitionId)
+                return type;
+        }
+        return null;
     }
 
     private static int GetDistance(Position a, Position b)

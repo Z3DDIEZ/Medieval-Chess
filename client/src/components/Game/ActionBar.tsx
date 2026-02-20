@@ -92,34 +92,38 @@ export const ActionBar: React.FC<ActionBarProps> = ({ selectedPos }) => {
 
         {/* Abilities */}
         {piece.abilities?.map((ability, idx) => {
-          const isActive = selectedAbility === ability.abilityDefinitionId;
-          const canAfford = true; // In the future, check cost. Assuming 2 AP for generic abilities.
+          const isActive = selectedAbility === ability.abilityType;
+          const canAfford = currentAP >= ability.apCost;
 
           return (
             <button
               key={idx}
-              onClick={(e) =>
-                handleAbilityClick(ability.abilityDefinitionId, e)
-              }
+              onClick={(e) => handleAbilityClick(ability.abilityType, e)}
               disabled={!ability.isReady || !canAfford}
+              title={ability.description}
               style={{
                 padding: "10px 20px",
                 background: isActive ? "#4caf50" : "#333",
-                color: isActive ? "#fff" : ability.isReady ? "#fff" : "#666",
+                color: isActive
+                  ? "#fff"
+                  : ability.isReady && canAfford
+                    ? "#fff"
+                    : "#666",
                 border: "2px solid",
                 borderColor: isActive
                   ? "#fff"
-                  : ability.isReady
+                  : ability.isReady && canAfford
                     ? "#4caf50"
                     : "#444",
                 borderRadius: "6px",
                 fontWeight: "bold",
-                cursor: ability.isReady ? "pointer" : "not-allowed",
+                cursor:
+                  ability.isReady && canAfford ? "pointer" : "not-allowed",
                 transition: "all 0.2s ease",
                 boxShadow: isActive
                   ? "0 0 10px rgba(76, 175, 80, 0.5)"
                   : "none",
-                opacity: ability.isReady ? 1 : 0.6,
+                opacity: ability.isReady && canAfford ? 1 : 0.6,
               }}
             >
               <div
@@ -129,13 +133,13 @@ export const ActionBar: React.FC<ActionBarProps> = ({ selectedPos }) => {
                   alignItems: "center",
                 }}
               >
-                <span>{ability.abilityDefinitionId}</span>
+                <span>{ability.name}</span>
                 <div
                   style={{ fontSize: "11px", marginTop: "2px", opacity: 0.8 }}
                 >
                   {!ability.isReady
                     ? `Cooldown: ${ability.currentCooldown}/${ability.maxCooldown}`
-                    : "Cost: 2 AP"}
+                    : `Cost: ${ability.apCost} AP`}
                 </div>
               </div>
             </button>

@@ -143,7 +143,7 @@ public class GamesController : ControllerBase
     public record MoveRequest(string From, string To, int? PromotionPiece = null);
     public record PlayerColorRequest(MedievalChess.Domain.Enums.PlayerColor Color);
     public record AbilityRequest(string From, string AbilityId, string? Target = null);
-    public record UpgradeRequest(string From);
+    public record UpgradeRequest(string From, string AbilityType);
 
     [HttpPost("{id}/abilities")]
     public async Task<ActionResult> UseAbility(Guid id, [FromBody] AbilityRequest request)
@@ -167,7 +167,7 @@ public class GamesController : ControllerBase
     {
         try
         {
-            var result = await _mediator.Send(new SpendXPCommand(id, request.From));
+            var result = await _mediator.Send(new SpendXPCommand(id, request.From, request.AbilityType));
             if (!result) return BadRequest("Upgrade failed");
 
             await _hubContext.Clients.Group(id.ToString()).SendAsync("GameStateUpdated", id);
@@ -233,13 +233,35 @@ public class GamesController : ControllerBase
                     Court = p.Position.HasValue 
                         ? MedievalChess.Domain.Enums.CourtHelper.GetCourt(p.Position.Value).ToString() 
                         : null,
-                    Abilities = p.Abilities.Select(a => new
+                    Abilities = p.Abilities.Select(a => {
+                        var resolvedType = MedievalChess.Domain.Logic.AbilityManager.ResolveAbilityType(a.AbilityDefinitionId);
+                        var def = resolvedType.HasValue ? MedievalChess.Domain.Logic.AbilityCatalog.Get(resolvedType.Value) : null;
+                        return new
+                        {
+                            a.AbilityDefinitionId,
+                            AbilityType = resolvedType?.ToString() ?? "Unknown",
+                            a.CurrentCooldown,
+                            a.MaxCooldown,
+                            a.UpgradeTier,
+                            a.IsReady,
+                            Name = def?.Name ?? "Unknown",
+                            Description = def?.Description ?? "",
+                            APCost = def?.APCost ?? 0,
+                            RequiresTarget = def?.RequiresTarget ?? false,
+                            Range = def?.Range ?? 0
+                        };
+                    }).ToList(),
+                    AbilityCatalog = MedievalChess.Domain.Logic.AbilityCatalog.GetForPieceType(p.Type).Select(ab => new
                     {
-                        a.AbilityDefinitionId,
-                        a.CurrentCooldown,
-                        a.MaxCooldown,
-                        a.UpgradeTier,
-                        a.IsReady
+                        AbilityType = ab.Type.ToString(),
+                        ab.Name,
+                        ab.Description,
+                        ab.APCost,
+                        ab.XPRequired,
+                        Tier = ab.Tier.ToString(),
+                        ab.RequiresTarget,
+                        ab.Range,
+                        IsUnlocked = p.Abilities.Any(pa => pa.AbilityDefinitionId == MedievalChess.Domain.Logic.AbilityManager.GetAbilityDefinitionId(ab.Type))
                     }).ToList()
                 }),
             // Include move history for the sidebar

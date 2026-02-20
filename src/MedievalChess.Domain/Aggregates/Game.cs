@@ -274,21 +274,14 @@ public class Game : AggregateRoot<Guid>
         }
     }
     
-    public void UpgradePieceAbility(Piece piece)
+    public void UpgradePieceAbility(Piece piece, AbilityType abilityType)
     {
         if (piece.Color != CurrentTurn) throw new InvalidOperationException("Not your turn");
-        var xpRequired = piece.Level * 100;
-        piece.SpendXP(xpRequired);
-        piece.LevelUp();
-        
-        if (piece.Abilities.Any())
+
+        var abilityManager = new Logic.AbilityManager(this);
+        if (!abilityManager.UnlockAbility(piece, abilityType))
         {
-            piece.Abilities.First().Upgrade();
-        }
-        else
-        {
-            var testAbilityId = Guid.NewGuid(); // To mock UI
-            piece.Abilities.Add(new PieceAbility(piece.Id, testAbilityId, 3));
+            throw new InvalidOperationException("Cannot unlock this ability.");
         }
     }
 
@@ -298,37 +291,28 @@ public class Game : AggregateRoot<Guid>
         if (piece == null || piece.Color != CurrentTurn) throw new InvalidOperationException("Invalid ability piece");
         if (piece.IsDefecting) throw new InvalidOperationException("Defecting pieces cannot use abilities");
 
-        var ability = piece.Abilities.FirstOrDefault(a => a.AbilityDefinitionId.ToString() == abilityId);
-        if (ability != null && ability.IsReady)
-        {
-            SpendAP(CurrentTurn, 2);
-            ability.TriggerCooldown();
-            
-            if (targetPos.HasValue)
-            {
-                var target = Board.GetPieceAt(targetPos.Value);
-                if (target != null)
-                {
-                    int damage = 10 + (ability.UpgradeTier * 5);
-                    target.TakeDamage(damage);
-                    
-                    var move = new Move(sourcePos, targetPos.Value, piece, target.IsCaptured ? target : null)
-                    {
-                        DamageDealt = damage,
-                        IsAttackBounce = !target.IsCaptured,
-                        Notation = "[Ability] -> " + targetPos.Value.ToAlgebraic() 
-                    };
-                    _playedMoves.Add(move);
-                    
-                    if (target.IsCaptured)
-                    {
-                        Board.ResetHalfMoveClock();
-                    }
-                }
-            }
+        // Parse the abilityId as an AbilityType enum
+        if (!Enum.TryParse<AbilityType>(abilityId, out var abilityType))
+            throw new InvalidOperationException($"Unknown ability: {abilityId}");
 
-            EndTurn(engine);
+        var abilityManager = new Logic.AbilityManager(this);
+        if (!abilityManager.ActivateAbility(piece, abilityType, targetPos))
+        {
+            throw new InvalidOperationException("Ability activation failed.");
         }
+
+        // Record the move for frontend visualization
+        var targetAlg = targetPos?.ToAlgebraic() ?? sourcePos.ToAlgebraic();
+        var definition = Logic.AbilityCatalog.Get(abilityType);
+        var notation = $"[{definition?.Name ?? abilityType.ToString()}] -> {targetAlg}";
+        
+        var move = new Move(sourcePos, targetPos ?? sourcePos, piece)
+        {
+            Notation = notation
+        };
+        _playedMoves.Add(move);
+
+        EndTurn(engine);
     }
 
     // Updated signature to include new managers would happen here, but for now we instantiate them or assume they are stateless/helper

@@ -4,10 +4,28 @@ import { HubConnectionBuilder } from "@microsoft/signalr";
 
 interface PieceAbility {
   abilityDefinitionId: string;
+  abilityType: string;
   currentCooldown: number;
   maxCooldown: number;
   upgradeTier: number;
   isReady: boolean;
+  name: string;
+  description: string;
+  apCost: number;
+  requiresTarget: boolean;
+  range: number;
+}
+
+interface CatalogAbility {
+  abilityType: string;
+  name: string;
+  description: string;
+  apCost: number;
+  xpRequired: number;
+  tier: string;
+  requiresTarget: boolean;
+  range: number;
+  isUnlocked: boolean;
 }
 
 interface Piece {
@@ -25,6 +43,7 @@ interface Piece {
   isDefecting: boolean;
   court: string | null;
   abilities: PieceAbility[];
+  abilityCatalog?: CatalogAbility[];
 }
 
 interface NarrativeEntry {
@@ -83,7 +102,11 @@ interface GameStore {
     abilityId: string,
     target?: string,
   ) => Promise<void>;
-  upgradePiece: (id: string, from: string) => Promise<void>;
+  upgradePiece: (
+    id: string,
+    from: string,
+    abilityType: string,
+  ) => Promise<void>;
   // AI
   isAIThinking: boolean;
   lastAIMoveTime?: number;
@@ -239,9 +262,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       set({ selectedAbility: null });
     }
   },
-  upgradePiece: async (id: string, from: string) => {
+  upgradePiece: async (id: string, from: string, abilityType: string) => {
     try {
-      await axios.post(`/api/Games/${id}/upgrade`, { from });
+      await axios.post(`/api/Games/${id}/upgrade`, { from, abilityType });
     } catch (err: any) {
       console.error(err);
       set({ error: err.response?.data || "Upgrade failed" });

@@ -86,7 +86,18 @@ public class XPManager
             piece.LevelUp();
             nextLevelXP = piece.Level * 100;
             
-            // TODO: Trigger "PieceLeveledUp" event or notification
+            // Auto-grant the first Basic-tier ability from the catalog on first level-up
+            if (!piece.Abilities.Any())
+            {
+                var basicAbility = AbilityCatalog.GetForPieceType(piece.Type)
+                    .FirstOrDefault(a => a.Tier == AbilityTier.Basic);
+                    
+                if (basicAbility != null)
+                {
+                    var abilityManager = new AbilityManager(_game);
+                    abilityManager.UnlockAbility(piece, basicAbility.Type);
+                }
+            }
         }
     }
 }
