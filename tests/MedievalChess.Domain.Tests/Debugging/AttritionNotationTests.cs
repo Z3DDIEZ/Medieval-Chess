@@ -11,11 +11,11 @@ public class AttritionNotationTests
 {
     private class MockEngine : IEngineService
     {
-        public bool IsMoveLegal(Board board, Position from, Position to, PlayerColor turn) => true;
+        public bool IsMoveLegal(Board board, Position from, Position to, PlayerColor turn, bool isAttritionMode = false) => true;
         public bool IsKingInCheck(Board board, PlayerColor color) => false;
-        public bool IsCheckmate(Board board, PlayerColor color) => false;
-        public bool IsStalemate(Board board, PlayerColor color) => false;
-        public IEnumerable<Position> GetLegalDestinations(Board board, Position from) => new List<Position>();
+        public bool IsCheckmate(Board board, PlayerColor color, bool isAttritionMode = false) => false;
+        public bool IsStalemate(Board board, PlayerColor color, bool isAttritionMode = false) => false;
+        public IEnumerable<Position> GetLegalDestinations(Board board, Position from, bool isAttritionMode = false) => new List<Position>();
     }
 
     private class MockRNG : Common.IRNGService

@@ -72,7 +72,7 @@ public class Game : AggregateRoot<Guid>
             throw new InvalidOperationException("Game is not in progress");
 
         // 1. Validate Legal Move (Engine)
-        if (!engine.IsMoveLegal(Board, from, to, CurrentTurn))
+        if (!engine.IsMoveLegal(Board, from, to, CurrentTurn, IsAttritionMode))
         {
             throw new InvalidOperationException("Illegal move");
         }
@@ -418,7 +418,7 @@ public class Game : AggregateRoot<Guid>
                 // Award XP for Check
                 new Logic.XPManager(this).AwardCheckXP(lastMove.Piece);
                 
-                if (engine.IsCheckmate(Board, CurrentTurn))
+                if (engine.IsCheckmate(Board, CurrentTurn, IsAttritionMode))
                 {
                     lastMove.IsCheckmate = true;
                     lastMove.Notation = lastMove.ToAlgebraicNotation(); // Re-generate with checkmate symbol
@@ -429,7 +429,7 @@ public class Game : AggregateRoot<Guid>
         }
         
         // Check for stalemate
-        if (engine.IsStalemate(Board, CurrentTurn))
+        if (engine.IsStalemate(Board, CurrentTurn, IsAttritionMode))
         {
             Status = GameStatus.Stalemate;
             return;

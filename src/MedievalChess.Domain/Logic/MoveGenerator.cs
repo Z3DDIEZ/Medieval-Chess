@@ -6,7 +6,7 @@ namespace MedievalChess.Domain.Logic;
 
 public class MoveGenerator
 {
-    public IEnumerable<Move> GetLegalMoves(Board board, PlayerColor turn)
+    public IEnumerable<Move> GetLegalMoves(Board board, PlayerColor turn, bool isAttritionMode = false)
     {
         // Materialize to List to avoid lazy evaluation issues during iteration
         var activePieces = board.GetActivePieces(turn).ToList();
@@ -23,7 +23,7 @@ public class MoveGenerator
             
             foreach (var target in pseudoMoves)
             {
-                if (IsLegal(board, piece, target))
+                if (IsLegal(board, piece, target, isAttritionMode))
                 {
                     var capturedPiece = board.GetPieceAt(target);
                     legalMoves.Add(new Move(piece.Position.Value, target, piece, capturedPiece));
@@ -33,7 +33,7 @@ public class MoveGenerator
         return legalMoves;
     }
 
-    public bool IsLegal(Board board, Piece piece, Position to)
+    public bool IsLegal(Board board, Piece piece, Position to, bool isAttritionMode = false)
     {
         if (piece.Position == null) return false;
         
@@ -47,7 +47,7 @@ public class MoveGenerator
         if (piece.Type == PieceType.King && Math.Abs(to.File - from.File) == 2)
         {
             // Can't castle out of check
-            if (IsKingInCheck(board, piece.Color)) return false;
+            if (!isAttritionMode && IsKingInCheck(board, piece.Color)) return false;
             
             // Can't castle through check - check intermediate square
             int direction = to.File > from.File ? 1 : -1;
@@ -58,7 +58,7 @@ public class MoveGenerator
             try
             {
                 piece.Position = intermediateSquare;
-                if (IsKingInCheck(board, piece.Color)) return false;
+                if (!isAttritionMode && IsKingInCheck(board, piece.Color)) return false;
             }
             finally
             {
@@ -66,6 +66,9 @@ public class MoveGenerator
             }
         }
         
+        // In Attrition Mode, checks do not invalidate moves
+        if (isAttritionMode) return true;
+
         // 3. Simulate move with guaranteed state restoration
         var targetPiece = board.GetPieceAt(to);
         
