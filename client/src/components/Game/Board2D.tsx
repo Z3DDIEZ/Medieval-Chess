@@ -4,6 +4,7 @@ import { getPieceComponent } from './ChessAssets';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { PromotionPicker } from './PromotionPicker';
+import { ActionBar } from './ActionBar';
 import './BoardTheme.css';
 
 const ItemTypes = {
@@ -256,7 +257,7 @@ interface PendingPromotion {
 }
 
 export const Board2D = ({ onPieceSelect, flipped = false }: Board2DProps) => {
-    const { game, executeMove, legalMoves, getLegalMoves, clearLegalMoves } = useGameStore();
+    const { game, executeMove, executeAbility, selectedAbility, legalMoves, getLegalMoves, clearLegalMoves } = useGameStore();
     const [selectedPos, setSelectedPos] = useState<string | null>(null);
     const [pendingPromotion, setPendingPromotion] = useState<PendingPromotion | null>(null);
 
@@ -309,9 +310,14 @@ export const Board2D = ({ onPieceSelect, flipped = false }: Board2DProps) => {
             // if click on empty/enemy -> move
             const selectedPiece = game.pieces.find(p => p.position === selectedPos);
 
-            if (selectedPiece && clickedPiece && selectedPiece.color === clickedPiece.color) {
+            if (selectedPiece && clickedPiece && selectedPiece.color === clickedPiece.color && !selectedAbility) {
                 updateSelection(alg);
                 getLegalMoves(game.id, alg);
+            } else if (selectedAbility) {
+                // Execute Ability
+                executeAbility(game.id, selectedPos, selectedAbility, alg);
+                updateSelection(null);
+                clearLegalMoves();
             } else {
                 // Check if this is a promotion move
                 const isLegal = legalMoves.includes(alg); // Check validation first!
@@ -332,7 +338,7 @@ export const Board2D = ({ onPieceSelect, flipped = false }: Board2DProps) => {
                 }
             }
         } else {
-            if (clickedPiece && clickedPiece.color === game.currentTurn) {
+            if (clickedPiece && clickedPiece.color === game.currentTurn && !selectedAbility) {
                 updateSelection(alg);
                 getLegalMoves(game.id, alg);
             }
@@ -463,6 +469,8 @@ export const Board2D = ({ onPieceSelect, flipped = false }: Board2DProps) => {
                     onCancel={() => setPendingPromotion(null)}
                 />
             )}
+            
+            <ActionBar selectedPos={selectedPos} />
         </DndProvider>
     );
 };

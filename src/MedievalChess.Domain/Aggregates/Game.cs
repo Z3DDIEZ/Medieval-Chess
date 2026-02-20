@@ -274,6 +274,63 @@ public class Game : AggregateRoot<Guid>
         }
     }
     
+    public void UpgradePieceAbility(Piece piece)
+    {
+        if (piece.Color != CurrentTurn) throw new InvalidOperationException("Not your turn");
+        var xpRequired = piece.Level * 100;
+        piece.SpendXP(xpRequired);
+        piece.LevelUp();
+        
+        if (piece.Abilities.Any())
+        {
+            piece.Abilities.First().Upgrade();
+        }
+        else
+        {
+            var testAbilityId = Guid.NewGuid(); // To mock UI
+            piece.Abilities.Add(new PieceAbility(piece.Id, testAbilityId, 3));
+        }
+    }
+
+    public void ExecuteAbility(Position sourcePos, string abilityId, Position? targetPos, Logic.IEngineService engine)
+    {
+        var piece = Board.GetPieceAt(sourcePos);
+        if (piece == null || piece.Color != CurrentTurn) throw new InvalidOperationException("Invalid ability piece");
+        if (piece.IsDefecting) throw new InvalidOperationException("Defecting pieces cannot use abilities");
+
+        var ability = piece.Abilities.FirstOrDefault(a => a.AbilityDefinitionId.ToString() == abilityId);
+        if (ability != null && ability.IsReady)
+        {
+            SpendAP(CurrentTurn, 2);
+            ability.TriggerCooldown();
+            
+            if (targetPos.HasValue)
+            {
+                var target = Board.GetPieceAt(targetPos.Value);
+                if (target != null)
+                {
+                    int damage = 10 + (ability.UpgradeTier * 5);
+                    target.TakeDamage(damage);
+                    
+                    var move = new Move(sourcePos, targetPos.Value, piece, target.IsCaptured ? target : null)
+                    {
+                        DamageDealt = damage,
+                        IsAttackBounce = !target.IsCaptured,
+                        Notation = "[Ability] -> " + targetPos.Value.ToAlgebraic() 
+                    };
+                    _playedMoves.Add(move);
+                    
+                    if (target.IsCaptured)
+                    {
+                        Board.ResetHalfMoveClock();
+                    }
+                }
+            }
+
+            EndTurn(engine);
+        }
+    }
+
     // Updated signature to include new managers would happen here, but for now we instantiate them or assume they are stateless/helper
     // Ideally we'd pass them in, but to avoid large refactors we can instantiate them inside or Pass them via method injection.
     // For now I'm instantiating them locally / using static logic if possible, OR pass them in.

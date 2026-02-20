@@ -2,6 +2,8 @@ using MediatR;
 using MedievalChess.Application.Games.Commands.CreateGame;
 using MedievalChess.Application.Games.Commands.ExecuteMove;
 using MedievalChess.Application.Games.Queries.GetGame;
+using MedievalChess.Application.Games.Commands.UseAbility;
+using MedievalChess.Application.Games.Commands.SpendXP;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 
@@ -140,6 +142,42 @@ public class GamesController : ControllerBase
 
     public record MoveRequest(string From, string To, int? PromotionPiece = null);
     public record PlayerColorRequest(MedievalChess.Domain.Enums.PlayerColor Color);
+    public record AbilityRequest(string From, string AbilityId, string? Target = null);
+    public record UpgradeRequest(string From);
+
+    [HttpPost("{id}/abilities")]
+    public async Task<ActionResult> UseAbility(Guid id, [FromBody] AbilityRequest request)
+    {
+        try
+        {
+            var result = await _mediator.Send(new UseAbilityCommand(id, request.From, request.AbilityId, request.Target));
+            if (!result) return BadRequest("Ability failed");
+
+            await _hubContext.Clients.Group(id.ToString()).SendAsync("GameStateUpdated", id);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPost("{id}/upgrade")]
+    public async Task<ActionResult> SpendXP(Guid id, [FromBody] UpgradeRequest request)
+    {
+        try
+        {
+            var result = await _mediator.Send(new SpendXPCommand(id, request.From));
+            if (!result) return BadRequest("Upgrade failed");
+
+            await _hubContext.Clients.Group(id.ToString()).SendAsync("GameStateUpdated", id);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<object>> Get(Guid id)

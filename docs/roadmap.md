@@ -69,30 +69,30 @@
 - [x] Coordinate Labels (File a-h, Rank 1-8 on board edges)
 - [x] Mode-Specific Controls (3D: camera toggles, 2D: flip toggle)
 
-### Phase 12: The Loyalty System 🚧
+### Phase 12: The Loyalty System ✅
 
 - [x] Scaffold Loyalty Relationship Entity & Manager
 - [x] Initial Game.EndTurn hook
-- [ ] Wire end-of-turn processing to fully apply LoyaltyManager defection mechanics
-- [ ] Process defection state transitions (Lord -> Vassal chaining)
+- [x] Wire end-of-turn processing to fully apply LoyaltyManager defection mechanics
+- [x] Process defection state transitions (Lord -> Vassal chaining)
 
-### Phase 13: The Progression System 🚧
+### Phase 13: The Progression System ✅
 
 - [x] Action Point (AP) System scaffolding
 - [x] Ability & Effect Entities
 - [x] XP collection mechanisms
-- [ ] Execute capability for pieces to spend collected XP
-- [ ] Unlock and activate unique Ability Trees
+- [x] Execute capability for pieces to spend collected XP
+- [x] Unlock and activate unique Ability Trees
 
-### Phase 14: AI Development 🚧
+### Phase 14: AI Development ✅
 
-- [ ] Develop Minimax Engine with Alpha-Beta Pruning
-- [ ] Apply Minimax AI algorithm in the Engine for solo-play
-- [ ] Implement MedievalEvaluator (Court/Loyalty Heuristics)
+- [x] Develop Minimax Engine with Alpha-Beta Pruning
+- [x] Apply Minimax AI algorithm in the Engine for solo-play
+- [x] Implement MedievalEvaluator (Court/Loyalty Heuristics)
 
-### Phase 15: Frontend Integration & Narrative 🔄
+### Phase 15: Frontend Integration & Narrative ✅
 
 - [x] PieceInfoPanel: Court, Abilities, Defection warnings
 - [x] 3D Models & Scene refinements
-- [ ] Connect Narrative System to UI (Battle Log Component)
-- [ ] Visualize AI Thinking and Attrition Mode UI feedback
+- [x] Connect Narrative System to UI (Battle Log Component)
+- [x] Visualize AI Thinking and Attrition Mode UI feedback
