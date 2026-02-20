@@ -24,6 +24,7 @@ public class AbilityManagerTests
     {
         // Arrange
         var pawn = _game.Board.GetPieceAt(new Position(0, 1));
+        Assert.NotNull(pawn);
         var ability = new PieceAbility(pawn.Id, Guid.NewGuid(), 3);
         ability.TriggerCooldown(); // Set to 3
         pawn.Abilities.Add(ability);
@@ -40,6 +41,7 @@ public class AbilityManagerTests
     {
         // Arrange
         var pawn = _game.Board.GetPieceAt(new Position(0, 1));
+        Assert.NotNull(pawn);
         var effect = new ActiveEffect(pawn.Id, EffectType.DamageReduction, 10, 1);
         pawn.ActiveEffects.Add(effect);
 
@@ -55,5 +57,38 @@ public class AbilityManagerTests
 
         // Assert 2: Should be removed
         Assert.DoesNotContain(effect, pawn.ActiveEffects);
+    }
+
+    [Fact]
+    public void UnlockAbility_WhenValid_SpendsXPAndAddsAbility()
+    {
+        // Arrange
+        var knight = new Knight(PlayerColor.White, new Position(0, 0));
+        knight.GainXP(50); // Provide enough currency
+        
+        // Act
+        // Knight's 'Lance Strike' costs 30 XP
+        bool success = _abilityManager.UnlockAbility(knight, AbilityType.LanceStrike);
+
+        // Assert
+        Assert.True(success);
+        Assert.Equal(20, knight.XP); // 50 - 30
+        Assert.Single(knight.Abilities);
+    }
+
+    [Fact]
+    public void UnlockAbility_WhenInsufficientXP_Fails()
+    {
+        // Arrange
+        var knight = new Knight(PlayerColor.White, new Position(0, 0));
+        knight.GainXP(10); // Not enough currency (needs 30)
+        
+        // Act
+        bool success = _abilityManager.UnlockAbility(knight, AbilityType.LanceStrike);
+
+        // Assert
+        Assert.False(success);
+        Assert.Equal(10, knight.XP);
+        Assert.Empty(knight.Abilities);
     }
 }

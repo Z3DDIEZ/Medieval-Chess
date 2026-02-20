@@ -122,17 +122,14 @@ public class LoyaltyManager
 
     private void TransferPiece(Piece piece)
     {
-        // Remove from current loyalty relationships
-        var relationships = _game.LoyaltyRelationships
-            .Where(r => r.VassalId == piece.Id || r.LordId == piece.Id)
-            .ToList();
+        // 1. Determine new alignment
+        var newColor = piece.Color == PlayerColor.White ? PlayerColor.Black : PlayerColor.White;
+
+        // 2. Flip color and reset loyalty to neutral holding (e.g. 50)
+        piece.DefectTo(newColor);
         
-        // Note: In full implementation, we'd remove these relationships
-        // For now, just reset loyalty on the piece
-        piece.Loyalty = new LoyaltyValue(50); // Reset to neutral-ish
-        
-        // The actual color flip would require game infrastructure changes
-        // For now, we mark the piece as "ready to defect" - frontend can handle display
+        // 3. Remove from all current loyalty relationships (it is no longer a lord or vassal in its old hierarchy)
+        _game.RemoveLoyaltyRelationshipsForPiece(piece.Id);
     }
 
     /// <summary>

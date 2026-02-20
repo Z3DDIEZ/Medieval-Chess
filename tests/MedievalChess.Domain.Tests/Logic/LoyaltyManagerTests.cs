@@ -57,7 +57,26 @@ public class LoyaltyManagerTests
         _loyaltyManager.OnPieceCaptured(queen);
 
         // Assert
-        // Should lose 30
         Assert.Equal(50, pawnD2.Loyalty.Value);
+    }
+
+    [Fact]
+    public void ProcessDefections_FlipsColorAndRemovesRelationships()
+    {
+        // Arrange
+        var queen = _game.Board.GetPieceAt(new Position(3, 0)); // White Queen
+        var pawnD2 = _game.Board.GetPieceAt(new Position(3, 1)); // White Pawn
+        
+        _game.AddLoyaltyRelationship(new LoyaltyRelationship(pawnD2.Id, queen.Id));
+
+        pawnD2.Loyalty = new LoyaltyValue(20); // Defecting (< 30)
+
+        // Act
+        _loyaltyManager.ProcessDefections();
+
+        // Assert
+        Assert.Equal(PlayerColor.Black, pawnD2.Color);
+        Assert.Equal(50, pawnD2.Loyalty.Value);
+        Assert.Empty(_game.LoyaltyRelationships.Where(r => r.VassalId == pawnD2.Id || r.LordId == pawnD2.Id));
     }
 }

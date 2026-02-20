@@ -7,13 +7,14 @@ namespace MedievalChess.Domain.Entities;
 public abstract class Piece : AggregateRoot<Guid>
 {
     public abstract PieceType Type { get; }
-    public PlayerColor Color { get; private set; }
+    public PlayerColor Color { get; internal set; }
     public Position? Position { get; internal set; } // Null if captured
     public LoyaltyValue Loyalty { get; internal set; }
     
     // Progression
     public int Level { get; protected set; }
     public int XP { get; protected set; }
+    public int TotalXP { get; protected set; }
     
     // Combat (Attrition Mode)
     public int MaxHP { get; protected set; }
@@ -66,6 +67,15 @@ public abstract class Piece : AggregateRoot<Guid>
     public bool IsDefecting => Loyalty.Value < 30;
 
     /// <summary>
+    /// Flips the piece's color to the opponent's and resets loyalty to neutral holding.
+    /// </summary>
+    public void DefectTo(PlayerColor newColor)
+    {
+        Color = newColor;
+        Loyalty = new LoyaltyValue(50);
+    }
+
+    /// <summary>
     /// Standard chess capture (no damage - instant removal)
     /// </summary>
     public void Capture()
@@ -88,6 +98,16 @@ public abstract class Piece : AggregateRoot<Guid>
     public void GainXP(int amount)
     {
         XP += amount;
+        if (amount > 0)
+        {
+            TotalXP += amount;
+        }
+    }
+
+    public void SpendXP(int amount)
+    {
+        if (amount > XP) throw new InvalidOperationException("Not enough XP available");
+        XP -= amount;
     }
 
     public void LevelUp()

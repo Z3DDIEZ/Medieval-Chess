@@ -32,13 +32,13 @@ public class AbilityManager
         if (currentAP < definition.APCost)
             return false;
 
-        // Validate ability is unlocked (XP check)
-        if (source.XP < definition.XPRequired)
-            return false;
+        // Validate ability is unlocked (must be in piece's Abilities map)
+        var pieceAbility = source.Abilities.FirstOrDefault(a => a.AbilityDefinitionId == GetAbilityDefinitionId(abilityType));
+        if (pieceAbility == null)
+            return false; // Ability is not unlocked yet
 
         // Validate cooldown
-        var pieceAbility = source.Abilities.FirstOrDefault(a => a.AbilityDefinitionId == GetAbilityDefinitionId(abilityType));
-        if (pieceAbility != null && pieceAbility.CurrentCooldown > 0)
+        if (pieceAbility.CurrentCooldown > 0)
             return false;
 
         // Validate target if required
@@ -52,12 +52,33 @@ public class AbilityManager
         _game.SpendAP(_game.CurrentTurn, definition.APCost);
 
         // Set cooldown
-        if (pieceAbility == null)
-        {
-            pieceAbility = new PieceAbility(source.Id, GetAbilityDefinitionId(abilityType), definition.Cooldown);
-            source.Abilities.Add(pieceAbility);
-        }
         pieceAbility.TriggerCooldown();
+
+        return true;
+    }
+
+    /// <summary>
+    /// Spends the piece's XP to unlock a new ability from its progression tree.
+    /// </summary>
+    public bool UnlockAbility(Piece piece, AbilityType type)
+    {
+        var definition = AbilityCatalog.Get(type);
+        if (definition == null) return false;
+
+        // Must be for this piece type
+        if (piece.Type != definition.RequiredPieceType) return false;
+
+        // Must not already be unlocked
+        var defId = GetAbilityDefinitionId(type);
+        if (piece.Abilities.Any(a => a.AbilityDefinitionId == defId)) return false;
+
+        // Must have enough currency
+        if (piece.XP < definition.XPRequired) return false;
+
+        // Deduct XP and grant
+        piece.SpendXP(definition.XPRequired);
+        var pieceAbility = new PieceAbility(piece.Id, defId, definition.Cooldown);
+        piece.Abilities.Add(pieceAbility);
 
         return true;
     }

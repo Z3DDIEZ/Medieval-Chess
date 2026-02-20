@@ -11,7 +11,7 @@ public class Game : AggregateRoot<Guid>
     public bool IsStressState { get; private set; }
     public bool IsAttritionMode { get; private set; }
     public int CombatSeed { get; private set; }
-    public const int AttritionModeStartTurn = 3;
+    public int AttritionModeStartTurn { get; internal set; } = 3;
 
     public CourtControl KingsCourtControl { get; private set; }
     public CourtControl QueensCourtControl { get; private set; }
@@ -284,6 +284,11 @@ public class Game : AggregateRoot<Guid>
     {
         _loyaltyRelationships.Add(relationship);
     }
+
+    public void RemoveLoyaltyRelationshipsForPiece(Guid pieceId)
+    {
+        _loyaltyRelationships.RemoveAll(r => r.LordId == pieceId || r.VassalId == pieceId);
+    }
     
     private void CheckStressState(Logic.IEngineService engine)
     {
@@ -426,6 +431,21 @@ public class Game : AggregateRoot<Guid>
                     return;
                 }
             }
+        }
+        
+        // Game Over Check (King Death/Capture)
+        var whiteKing = Board.Pieces.FirstOrDefault(p => p.Type == PieceType.King && p.Color == PlayerColor.White);
+        var blackKing = Board.Pieces.FirstOrDefault(p => p.Type == PieceType.King && p.Color == PlayerColor.Black);
+        
+        if (whiteKing == null || whiteKing.IsCaptured)
+        {
+            Status = GameStatus.Checkmate;
+            return;
+        }
+        if (blackKing == null || blackKing.IsCaptured)
+        {
+            Status = GameStatus.Checkmate;
+            return;
         }
         
         // Check for stalemate

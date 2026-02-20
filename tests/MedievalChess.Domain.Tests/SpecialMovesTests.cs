@@ -173,6 +173,8 @@ public class SpecialMovesTests
     public void IsCheckmate_FoolsMate_DetectedCorrectly()
     {        // Fool's Mate: 1.f3 e5 2.g4 Qh4#
         var game = Game.StartNew();
+        game.AttritionModeStartTurn = 10; // Prevent attrition mode from activating and disabling checkmate
+
         var rng = new Mocks.TestRNGService();
         var narrative = new Mocks.TestNarrativeService();
         

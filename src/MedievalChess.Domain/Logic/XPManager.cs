@@ -74,19 +74,17 @@ public class XPManager
     private void CheckLevelUp(Piece piece)
     {
         // Level thresholds
-        // Level 1 -> 2: 100 XP
-        // Level 2 -> 3: 200 XP (Total 300??) or relative?
-        // Piece.GainXP logic was "XP >= Level * 100". That implies relative to current level bucket.
-        // Let's stick to that for now. Honestly I'm winging a lot of this and refactoring later
+        // Level 1 -> 2: 100 TotalXP
+        // Level 2 -> 3: 200 TotalXP (300 Cumulative)
+        // Simplified mapping: Level N requires N * 100 cumulative XP
         
-        int requiredXP = piece.Level * 100;
+        int nextLevelXP = piece.Level * 100;
         
         // Handle multiple level ups if huge XP gain
-        while (piece.XP >= requiredXP)
+        while (piece.TotalXP >= nextLevelXP)
         {
-            piece.GainXP(-requiredXP); // Deduct for level up cost
             piece.LevelUp();
-            requiredXP = piece.Level * 100;
+            nextLevelXP = piece.Level * 100;
             
             // TODO: Trigger "PieceLeveledUp" event or notification
         }
