@@ -65,6 +65,12 @@ namespace MedievalChess.Engine.Bots
             var targetPiece = game.Board.GetPieceAt(newPos); // Should match TargetIndex logic
 
             var domainMove = new Move(piece.Position!.Value, newPos, piece, targetPiece);
+            
+            if (piece.Type == PieceType.Pawn && MedievalChess.Domain.Entities.Pieces.Pawn.IsPromotionRank(newPos.Rank, piece.Color))
+            {
+                domainMove.PromotionPiece = PieceType.Queen; // Always promote to Queen for now in simplified engine
+            }
+
             return domainMove;
         }
 

@@ -24,14 +24,13 @@ public class LoyaltyManagerTests
     {
         // Arrange
         var pawnD2 = _game.Board.GetPieceAt(new Position(3, 1)); // White Pawn
+        Assert.NotNull(pawnD2);
         var queen = _game.Board.GetPieceAt(new Position(3, 0)); // White Queen
+        Assert.NotNull(queen);
         
         // Establish relationship
-        if (pawnD2 != null && queen != null)
-        {
-             _game.AddLoyaltyRelationship(new LoyaltyRelationship(pawnD2.Id, queen.Id));
-             pawnD2.Loyalty = new LoyaltyValue(70);
-        }
+        _game.AddLoyaltyRelationship(new LoyaltyRelationship(pawnD2.Id, queen.Id));
+        pawnD2.Loyalty = new LoyaltyValue(70);
 
         // Act
         _loyaltyManager.UpdateLoyalty();
@@ -47,7 +46,9 @@ public class LoyaltyManagerTests
         // Arrange
         // Establish relationship: Queen is Lord of PawnD2
         var queen = _game.Board.GetPieceAt(new Position(3, 0)); // White Queen
+        Assert.NotNull(queen);
         var pawnD2 = _game.Board.GetPieceAt(new Position(3, 1)); // White Pawn
+        Assert.NotNull(pawnD2);
         
         _game.AddLoyaltyRelationship(new LoyaltyRelationship(pawnD2.Id, queen.Id));
 
@@ -65,7 +66,9 @@ public class LoyaltyManagerTests
     {
         // Arrange
         var queen = _game.Board.GetPieceAt(new Position(3, 0)); // White Queen
+        Assert.NotNull(queen);
         var pawnD2 = _game.Board.GetPieceAt(new Position(3, 1)); // White Pawn
+        Assert.NotNull(pawnD2);
         
         _game.AddLoyaltyRelationship(new LoyaltyRelationship(pawnD2.Id, queen.Id));
 
@@ -77,6 +80,6 @@ public class LoyaltyManagerTests
         // Assert
         Assert.Equal(PlayerColor.Black, pawnD2.Color);
         Assert.Equal(50, pawnD2.Loyalty.Value);
-        Assert.Empty(_game.LoyaltyRelationships.Where(r => r.VassalId == pawnD2.Id || r.LordId == pawnD2.Id));
+        Assert.DoesNotContain(_game.LoyaltyRelationships, r => r.VassalId == pawnD2.Id || r.LordId == pawnD2.Id);
     }
 }

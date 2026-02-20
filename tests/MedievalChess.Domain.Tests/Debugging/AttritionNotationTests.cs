@@ -59,9 +59,11 @@ public class AttritionNotationTests
 
         // Set up a combat scenario: White Pawn at d4, Black Pawn at e5
         var whitePawn = game.Board.GetPieceAt(new Position(3, 1)); // d2
+        Assert.NotNull(whitePawn);
         whitePawn.MoveTo(new Position(3, 3)); // Teleport to d4
         
         var blackPawn = game.Board.GetPieceAt(new Position(4, 6)); // e7
+        Assert.NotNull(blackPawn);
         blackPawn.MoveTo(new Position(4, 4)); // Teleport to e5
         
         // Act: White d4 attacks e5

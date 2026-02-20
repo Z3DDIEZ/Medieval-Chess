@@ -71,22 +71,27 @@ public class CombatManagerTests
     [Fact]
     public void CalculateCombat_ArmorReducesDamage()
     {
-        // Arrange
-        var attacker = new Queen(PlayerColor.White, new Position(0, 0)); // Base 18
-        var softDefender = new Pawn(PlayerColor.Black, new Position(1, 0)); // Armor 2
-        var hardDefender = new King(PlayerColor.Black, new Position(7, 7)); // Armor 15
+        // Assert: We run multiple iterations to verify the trend.
+        double totalSoftDmg = 0;
+        double totalHardDmg = 0;
+        int iterations = 100;
 
-        // Act
-        var resultSoft = _combatManager.CalculateCombat(attacker, softDefender);
-        var resultHard = _combatManager.CalculateCombat(attacker, hardDefender);
+        for (int i = 0; i < iterations; i++)
+        {
+            // Arrange
+            var attacker = new Queen(PlayerColor.White, new Position(0, 0)); // Base 18
+            var softDefender = new Pawn(PlayerColor.Black, new Position(1, 0)); // Armor 2
+            var hardDefender = new King(PlayerColor.Black, new Position(7, 7)); // Armor 15
 
-        // Assert
-        // We can't guarantee hard < soft due to RNG, but average is lower.
-        // Hard armor reduces 7.5-15 damage. Soft reduces 1-2.
-        // Diff ~10 damage. RNG on 18 base is +/- 20% (~3.6).
-        // So Hard should definitely be lower.
-        
-        Assert.True(resultSoft.DamageDealt > resultHard.DamageDealt);
+            // Act
+            totalSoftDmg += _combatManager.CalculateCombat(attacker, softDefender).DamageDealt;
+            totalHardDmg += _combatManager.CalculateCombat(attacker, hardDefender).DamageDealt;
+        }
+
+        double avgSoft = totalSoftDmg / iterations;
+        double avgHard = totalHardDmg / iterations;
+
+        Assert.True(avgSoft > avgHard, $"Soft target avg damage ({avgSoft}) should be higher than Hard target avg damage ({avgHard})");
     }
 
     [Fact]

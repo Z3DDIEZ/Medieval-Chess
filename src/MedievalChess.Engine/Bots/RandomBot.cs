@@ -4,6 +4,7 @@ using MedievalChess.Domain.Aggregates;
 using MedievalChess.Domain.Entities;
 using MedievalChess.Domain.Logic;
 using MedievalChess.Domain.Primitives;
+using MedievalChess.Domain.Enums;
 
 namespace MedievalChess.Engine.Bots
 {
@@ -39,9 +40,17 @@ namespace MedievalChess.Engine.Bots
                     for (int file = 0; file < 8; file++)
                     {
                         var targetPos = new Position(file, rank);
-                        if (_rulesEngine.IsMoveLegal(game.Board, piece.Position!.Value, targetPos, game.CurrentTurn))
+                        if (_rulesEngine.IsMoveLegal(game.Board, piece.Position!.Value, targetPos, game.CurrentTurn, game.IsAttritionMode))
                         {
-                            validMoves.Add(new Move(piece.Position.Value, targetPos, piece, game.Board.GetPieceAt(targetPos)));
+                            var targetPiece = game.Board.GetPieceAt(targetPos);
+                            var move = new Move(piece.Position.Value, targetPos, piece, targetPiece);
+                            
+                            if (piece.Type == PieceType.Pawn && MedievalChess.Domain.Entities.Pieces.Pawn.IsPromotionRank(rank, piece.Color))
+                            {
+                                move.PromotionPiece = PieceType.Queen; // Default to Queen for random bot
+                            }
+
+                            validMoves.Add(move);
                         }
                     }
                 }
